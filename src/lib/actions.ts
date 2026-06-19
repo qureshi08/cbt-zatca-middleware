@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getActiveOrg } from "@/lib/org";
 import { encryptSecret } from "@/lib/secrets";
+import { completeOnboarding } from "@/lib/zatca/onboarding";
 
 const field = (fd: FormData, k: string) => ((fd.get(k) as string) ?? "").trim();
 
@@ -114,4 +115,23 @@ export async function resetIntegration() {
   await supabaseAdmin.from("organizations").update({ integration: null }).eq("id", org.id);
   revalidatePath("/onboarding");
   redirect("/onboarding");
+}
+
+/**
+ * Run the full ZATCA onboarding for this tenant against the Demo (simulation)
+ * environment: CSR → compliance CSID → compliance checks → production CSID.
+ * Uses the proven `completeOnboarding`. OTP 123456 routes to simulation.
+ */
+export async function runZatcaOnboarding(fd: FormData) {
+  const org = await requireOrg();
+  const otp = field(fd, "otp") || "123456";
+  let err: string | null = null;
+  try {
+    await completeOnboarding(otp, org.id);
+  } catch (e) {
+    err = e instanceof Error ? e.message : "ZATCA onboarding failed";
+  }
+  revalidatePath("/onboarding");
+  revalidatePath("/");
+  redirect(err ? `/onboarding?zerr=${encodeURIComponent(err)}` : "/onboarding");
 }

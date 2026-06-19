@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getOnboardingState } from "@/lib/org";
-import { setIntegration, saveZohoConnection, saveOdooConnection, resetIntegration, generateWebhookKey } from "@/lib/actions";
+import { setIntegration, saveZohoConnection, saveOdooConnection, resetIntegration, generateWebhookKey, runZatcaOnboarding } from "@/lib/actions";
 
 const card: React.CSSProperties = { background: "#fff", border: "1px solid #e3e8ef", borderRadius: 10, padding: "18px 20px", marginBottom: 14 };
 const label: React.CSSProperties = { display: "block", fontSize: 12, color: "#33414f", margin: "12px 0 3px", fontWeight: 600 };
@@ -43,7 +43,7 @@ function KeyBlock({ newkey }: { newkey?: string }) {
   );
 }
 
-export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ newkey?: string }> }) {
+export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ newkey?: string; zerr?: string }> }) {
   const sp = await searchParams;
   const state = await getOnboardingState();
   if (!state) return <div style={{ padding: 32 }}>Not authenticated.</div>;
@@ -197,9 +197,19 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
         <div style={card}>
           <h3 style={{ margin: "0 0 8px" }}>Step 4 — ZATCA onboarding (Demo / simulation)</h3>
           <p style={{ color: "#6b7785", fontSize: 13 }}>
-            Get an OTP from the Fatoora portal (use <code>123456</code> in Demo), then we generate your keys/CSR and run compliance against the simulation environment.
+            We generate your keys + CSR, request a compliance certificate, run the compliance checks, and issue your production CSID — all against the ZATCA <b>simulation</b> environment. In Demo the OTP is <code>123456</code>.
           </p>
-          <p style={{ color: "#8a97a6", fontSize: 12 }}>⏳ The ZATCA onboarding action is wired in the next build step.</p>
+          {sp.zerr && (
+            <div style={{ background: "#fdeee9", border: "1px solid #f0c0b3", color: "#c0392b", padding: "9px 12px", borderRadius: 8, fontSize: 13, margin: "10px 0" }}>❌ {sp.zerr}</div>
+          )}
+          <form action={runZatcaOnboarding}>
+            <label style={label}>OTP (from the Fatoora portal — use 123456 in Demo)</label>
+            <div style={{ display: "flex", gap: 10, alignItems: "flex-end", maxWidth: 380 }}>
+              <input style={input} name="otp" defaultValue="123456" />
+              <button type="submit" style={{ ...btn, whiteSpace: "nowrap" }}>Run onboarding →</button>
+            </div>
+          </form>
+          <p style={hint}>This calls ZATCA simulation and may take a few seconds.</p>
         </div>
       )}
 
