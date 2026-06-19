@@ -2,18 +2,17 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
 import { AppProvider } from '@/context/AppContext';
-import { getOnboardingStatus } from '@/lib/zatca/onboarding-storage';
+import { getCurrentUser } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
   title: 'ZATCA Middleware – Phase 2 E-Invoicing Platform',
-  description: 'ZATCA Phase 2 e-invoicing middleware. Any registered bank can onboard, sign, clear, and report invoices through a unified API.',
+  description: 'ZATCA Phase 2 e-invoicing middleware. Connect Odoo or Zoho (or our API) and clear/report invoices automatically.',
   icons: { icon: '/favicon.ico' },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // In a multi-tenant system, environment mode is specific to each organization
-  // and is displayed inside the specific pages rather than globally.
-  const mode = 'unconfigured';
+  // Show the app shell (sidebar) only when signed in; auth pages render standalone.
+  const user = await getCurrentUser();
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -24,15 +23,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body suppressHydrationWarning>
         <AppProvider>
-          <div className="app-shell">
-            <Sidebar mode={mode} />
-            <div className="main-content">
-              {children}
+          {user ? (
+            <div className="app-shell">
+              <Sidebar mode="unconfigured" />
+              <div className="main-content">{children}</div>
             </div>
-          </div>
+          ) : (
+            <div className="main-content">{children}</div>
+          )}
         </AppProvider>
       </body>
     </html>
   );
 }
-
