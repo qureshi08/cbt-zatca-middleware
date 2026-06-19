@@ -43,7 +43,7 @@ function KeyBlock({ newkey }: { newkey?: string }) {
   );
 }
 
-export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ newkey?: string; zerr?: string }> }) {
+export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ newkey?: string; zerr?: string; cerr?: string; cwarn?: string }> }) {
   const sp = await searchParams;
   const state = await getOnboardingState();
   if (!state) return <div style={{ padding: 32 }}>Not authenticated.</div>;
@@ -99,6 +99,13 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
             <h3 style={{ margin: 0 }}>Step 3 — Connect {integration === "zoho" ? "Zoho Books" : integration === "odoo" ? "Odoo" : "your system"}</h3>
             <form action={resetIntegration}><button type="submit" style={{ background: "#eef2f6", color: "#445", border: "none", padding: "5px 10px", borderRadius: 6, fontSize: 12, cursor: "pointer" }}>← Change software</button></form>
           </div>
+
+          {sp.cerr && (
+            <div style={{ background: "#fdeee9", border: "1px solid #f0c0b3", color: "#c0392b", padding: "9px 12px", borderRadius: 8, fontSize: 13, marginBottom: 12 }}>❌ Connection failed: {sp.cerr}</div>
+          )}
+          {sp.cwarn && (
+            <div style={{ background: "#fff6e0", border: "1px solid #f0d48a", color: "#8a5a00", padding: "9px 12px", borderRadius: 8, fontSize: 13, marginBottom: 12 }}>⚠️ {sp.cwarn}</div>
+          )}
 
           <KeyBlock newkey={sp.newkey} />
 

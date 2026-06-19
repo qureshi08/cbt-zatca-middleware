@@ -7,6 +7,8 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getActiveOrg } from "@/lib/org";
 import { encryptSecret } from "@/lib/secrets";
 import { completeOnboarding } from "@/lib/zatca/onboarding";
+import { ZohoClient } from "@/lib/zoho/client";
+import { OdooClient } from "@/lib/odoo/client";
 
 const field = (fd: FormData, k: string) => ((fd.get(k) as string) ?? "").trim();
 
@@ -68,45 +70,85 @@ export async function generateWebhookKey() {
   redirect(`/onboarding?newkey=${encodeURIComponent(raw)}`);
 }
 
-/** Save & mark connected: Zoho Books. Secrets encrypted at rest. */
+/**
+ * Connect Zoho Books — REAL: builds the client, calls testConnection() against
+ * Zoho's API, and only marks `connected` if it actually succeeds. Then verifies
+ * the cf_zatca_* custom fields. Secrets encrypted at rest. No fake states.
+ */
 export async function saveZohoConnection(fd: FormData) {
   const org = await requireOrg();
+  const region = field(fd, "zoho_region") || "sa";
+  const orgIdField = field(fd, "zoho_org_id");
+  const clientId = field(fd, "zoho_client_id");
+  const clientSecret = field(fd, "zoho_client_secret");
+  const refreshToken = field(fd, "zoho_refresh_token");
+
+  const zoho = new ZohoClient({ zohoRegion: region, zohoOrgId: orgIdField, zohoClientId: clientId, zohoClientSecret: clientSecret, zohoRefreshToken: refreshToken });
+  const test = await zoho.testConnection();
+
   await supabaseAdmin.from("zoho_config").upsert(
     {
       organization_id: org.id,
-      zoho_region: field(fd, "zoho_region") || "sa",
-      zoho_org_id: field(fd, "zoho_org_id"),
-      zoho_client_id: field(fd, "zoho_client_id"),
-      zoho_client_secret: encryptSecret(field(fd, "zoho_client_secret")) ?? "",
-      zoho_refresh_token: encryptSecret(field(fd, "zoho_refresh_token")) ?? "",
-      status: "connected",
-      last_sync: new Date().toISOString(),
+      zoho_region: region,
+      zoho_org_id: orgIdField,
+      zoho_client_id: clientId,
+      zoho_client_secret: encryptSecret(clientSecret) ?? "",
+      zoho_refresh_token: encryptSecret(refreshToken) ?? "",
+      status: test.success ? "connected" : "disconnected",
+      last_sync: test.success ? new Date().toISOString() : null,
     },
     { onConflict: "organization_id" },
   );
   revalidatePath("/onboarding");
   revalidatePath("/");
-  redirect("/onboarding");
+
+  if (!test.success) redirect(`/onboarding?cerr=${encodeURIComponent(test.error || "Could not reach Zoho — check your credentials.")}`);
+
+  let warn = "";
+  try {
+    const prov = await zoho.provisionCustomFields();
+    if (!prov.success && prov.errors?.length) warn = "Connected, but create these Zoho fields: " + prov.errors.join(", ");
+  } catch { /* field check is best-effort */ }
+  redirect(warn ? `/onboarding?cwarn=${encodeURIComponent(warn)}` : "/onboarding");
 }
 
-/** Save & mark connected: Odoo. Password encrypted at rest. */
+/**
+ * Connect Odoo — REAL: authenticates via JSON-RPC (testConnection), only marks
+ * `connected` on success, then provisions the x_zatca_* fields. Password encrypted.
+ */
 export async function saveOdooConnection(fd: FormData) {
   const org = await requireOrg();
+  const url = field(fd, "odoo_url");
+  const db = field(fd, "odoo_db");
+  const username = field(fd, "odoo_username");
+  const password = field(fd, "odoo_password");
+
+  const odoo = new OdooClient({ odooUrl: url, odooDb: db, odooUsername: username, odooPassword: password });
+  const test = await odoo.testConnection();
+
   await supabaseAdmin.from("odoo_config").upsert(
     {
       organization_id: org.id,
-      odoo_url: field(fd, "odoo_url"),
-      odoo_db: field(fd, "odoo_db"),
-      odoo_username: field(fd, "odoo_username"),
-      odoo_password: encryptSecret(field(fd, "odoo_password")) ?? "",
-      status: "connected",
-      last_sync: new Date().toISOString(),
+      odoo_url: url,
+      odoo_db: db,
+      odoo_username: username,
+      odoo_password: encryptSecret(password) ?? "",
+      status: test.success ? "connected" : "disconnected",
+      last_sync: test.success ? new Date().toISOString() : null,
     },
     { onConflict: "organization_id" },
   );
   revalidatePath("/onboarding");
   revalidatePath("/");
-  redirect("/onboarding");
+
+  if (!test.success) redirect(`/onboarding?cerr=${encodeURIComponent(test.error || "Could not reach Odoo — check URL/DB/credentials.")}`);
+
+  let warn = "";
+  try {
+    const prov = await odoo.provisionCustomFields();
+    if (!prov.success && prov.errors?.length) warn = "Connected, but Odoo field provisioning had issues: " + prov.errors.join(", ");
+  } catch { /* best-effort */ }
+  redirect(warn ? `/onboarding?cwarn=${encodeURIComponent(warn)}` : "/onboarding");
 }
 
 /** Let the user change their integration choice. */
