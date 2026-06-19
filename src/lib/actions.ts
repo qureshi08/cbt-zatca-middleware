@@ -208,7 +208,7 @@ export async function sendTestInvoice() {
 
   const data = res.data!;
   const zStatus = String(data.status ?? "");
-  await supabaseAdmin.from("invoices").upsert(
+  const { error: saveErr } = await supabaseAdmin.from("invoices").upsert(
     {
       organization_id: org.id,
       environment: "demo",
@@ -228,5 +228,9 @@ export async function sendTestInvoice() {
 
   revalidatePath("/onboarding");
   revalidatePath("/");
+  // Do not claim success if the invoice didn't actually persist.
+  if (saveErr) {
+    redirect(`/onboarding?terr=${encodeURIComponent(`Cleared as ${zStatus} but NOT saved: ${saveErr.message}. Run migration 003.`)}`);
+  }
   redirect(`/onboarding?tok=${encodeURIComponent(`${invoiceId} → ${zStatus || "DONE"}`)}`);
 }
