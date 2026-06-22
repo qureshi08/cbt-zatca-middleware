@@ -67,8 +67,11 @@ export async function POST(req: NextRequest) {
         if (body == null || typeof body !== 'object') body = {};
 
         // The document id and entity type may arrive in the body OR the URL query.
+        // Zoho's "Default Payload" nests the record: { invoice: { invoice_id } } or
+        // { creditnote: { creditnote_id } } — so check those shapes too.
         const inferredId =
             body.zohoInvoiceId || body.invoice_id || body.creditnote_id ||
+            body.invoice?.invoice_id || body.creditnote?.creditnote_id ||
             q.get('zohoInvoiceId') || q.get('invoice_id') || q.get('creditnote_id') || undefined;
         const action = body.action || q.get('action') || (inferredId ? 'pull' : 'push');
 
@@ -163,7 +166,7 @@ export async function POST(req: NextRequest) {
         if (action === 'pull') {
             const zohoInvoiceId = inferredId;
             const entityType: ZohoEntityType = (body.entityType || q.get('entityType')
-                || (body.creditnote_id || q.get('creditnote_id') ? 'creditnote' : 'invoice')) as ZohoEntityType;
+                || (body.creditnote_id || body.creditnote || q.get('creditnote_id') ? 'creditnote' : 'invoice')) as ZohoEntityType;
 
             if (!zohoInvoiceId) {
                 return NextResponse.json({ error: 'Missing zohoInvoiceId (or invoice_id / creditnote_id) for pull action' }, { status: 400 });

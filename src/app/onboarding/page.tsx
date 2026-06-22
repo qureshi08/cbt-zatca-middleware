@@ -310,13 +310,13 @@ function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
           <li style={{ margin: "7px 0" }}><span style={num}>Name</span>: open the dropdown (it&apos;ll say &quot;No results found&quot; — none exist yet) → <b>+ Add New Webhook</b>, and fill its form:
             <ul style={{ margin: "6px 0", paddingLeft: 18 }}>
               <li style={{ margin: "4px 0" }}><b>Name</b>: <code>ZATCA Invoice Webhook</code></li>
-              <li style={{ margin: "4px 0" }}><b>URL to Notify</b> (paste exactly — your key &amp; type are already in it):
+              <li style={{ margin: "4px 0" }}><b>Module</b>: <b>Invoice</b></li>
+              <li style={{ margin: "4px 0" }}><b>Method</b>: <b>POST</b>, and paste the <b>URL</b> (your key &amp; type are already in it):
                 <div style={copybox}>{invoiceUrl}</div>
               </li>
-              <li style={{ margin: "4px 0" }}><b>Method</b>: <b>POST</b></li>
-              <li style={{ margin: "4px 0" }}><b>Module</b>: <b>Invoices</b></li>
-              <li style={{ margin: "4px 0" }}>Under <b>Parameters</b> click <b>+ Add</b>: <b>Parameter Name</b> = <code>invoice_id</code>, <b>Value</b> = field picker → <b>Invoice ID</b>.</li>
-              <li style={{ margin: "4px 0" }}><b>Save</b> the webhook.</li>
+              <li style={{ margin: "4px 0" }}><b>Parameters</b>: leave empty. <b>Headers</b>: leave empty (the key is in the URL).</li>
+              <li style={{ margin: "4px 0" }}><b>Body</b>: keep <b>Default Payload</b> (we read Zoho&apos;s native <code>{`{ invoice: { invoice_id } }`}</code> shape automatically).</li>
+              <li style={{ margin: "4px 0" }}><b>Authorization Type</b>: <b>Self Authorization</b> (default). <b>Save</b>.</li>
             </ul>
           </li>
           <li style={{ margin: "7px 0" }}>Back in the dialog, the new webhook is now selected under <b>Name</b> → click <b>Associate</b>.</li>
@@ -339,14 +339,11 @@ function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
           <li style={{ margin: "7px 0" }}>On the <b>TRUE</b> branch → <b>+ Immediate Actions</b> → <b>Associate Immediate Actions</b> dialog.</li>
           <li style={{ margin: "7px 0" }}><span style={num}>Action Type</span>: <b>Webhooks</b>. <span style={num}>Name</span>: open dropdown → <b>+ Add New Webhook</b> → fill the form:
             <ul style={{ margin: "6px 0", paddingLeft: 18 }}>
-              <li style={{ margin: "4px 0" }}><b>Name</b>: <code>ZATCA Credit Note Webhook</code></li>
-              <li style={{ margin: "4px 0" }}><b>URL to Notify</b>:
+              <li style={{ margin: "4px 0" }}><b>Name</b>: <code>ZATCA Credit Note Webhook</code>; <b>Module</b>: <b>Credit Note</b></li>
+              <li style={{ margin: "4px 0" }}><b>Method</b>: <b>POST</b>, <b>URL</b>:
                 <div style={copybox}>{creditNoteUrl}</div>
               </li>
-              <li style={{ margin: "4px 0" }}><b>Method</b>: <b>POST</b></li>
-              <li style={{ margin: "4px 0" }}><b>Module</b>: <b>Credit Notes</b></li>
-              <li style={{ margin: "4px 0" }}>Under <b>Parameters</b> click <b>+ Add</b>: <b>Parameter Name</b> = <code>creditnote_id</code>, <b>Value</b> = field picker → <b>Credit Note ID</b>.</li>
-              <li style={{ margin: "4px 0" }}><b>Save</b> the webhook.</li>
+              <li style={{ margin: "4px 0" }}><b>Parameters</b> &amp; <b>Headers</b>: leave empty. <b>Body</b>: keep <b>Default Payload</b>. <b>Save</b>.</li>
             </ul>
           </li>
           <li style={{ margin: "7px 0" }}>Back in the dialog → <b>Associate</b>, then <b>Save</b> the workflow rule.</li>
