@@ -305,8 +305,9 @@ function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
           <li style={{ margin: "7px 0" }}><span style={num}>Workflow Type</span>: select <b>Event Based</b>.</li>
           <li style={{ margin: "7px 0" }}><span style={num}>Action Type</span>: select <b>Created</b> from the dropdown. <span style={hint}>(Only want finalized invoices? Choose <b>Submitted</b> instead.)</span> It then reads &quot;…executed when invoice is created&quot;.</li>
           <li style={{ margin: "7px 0" }}><span style={num}>Criteria</span>: to clear <b>every</b> invoice, add <b>no</b> criteria — just skip the <b>+ New Criteria</b> button. If a <b>Criterion 1</b> dialog opens, set <b>Add criteria for this workflow rule?</b> to <b>No</b> and click <b>Done</b>. (Add a criterion only if you want to filter which invoices clear.)</li>
-          <li style={{ margin: "7px 0" }}>Find the <b>Actions</b> section (may read &quot;Instant Actions&quot;). Click <b>+</b> / the action box, set <b>Type</b> = <b>Webhook</b>, then <b>+ New Webhook</b> (or <b>Configure</b>).</li>
-          <li style={{ margin: "7px 0" }}>In the Webhook form:
+          <li style={{ margin: "7px 0" }}>On the <b>TRUE</b> branch, click <b>+ Immediate Actions</b> → the <b>Associate Immediate Actions</b> dialog opens.</li>
+          <li style={{ margin: "7px 0" }}><span style={num}>Action Type</span>: select <b>Webhook</b>. <span style={hint}>(Not Custom Functions / Email — ignore any pre-existing <code>zatca_validate_invoice</code> function.)</span></li>
+          <li style={{ margin: "7px 0" }}><span style={num}>Name</span>: open the dropdown → <b>+ Add New Action</b> to create the webhook, and fill its form:
             <ul style={{ margin: "6px 0", paddingLeft: 18 }}>
               <li style={{ margin: "4px 0" }}><b>Name</b>: <code>ZATCA Invoice Webhook</code></li>
               <li style={{ margin: "4px 0" }}><b>URL to Notify</b> (paste exactly — your key &amp; type are already in it):
@@ -314,11 +315,12 @@ function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
               </li>
               <li style={{ margin: "4px 0" }}><b>Method</b>: <b>POST</b></li>
               <li style={{ margin: "4px 0" }}><b>Module</b>: <b>Invoices</b></li>
-              <li style={{ margin: "4px 0" }}>Under <b>Parameters</b> (a.k.a. &quot;User-Defined Parameters&quot;) click <b>+ Add</b>: set <b>Parameter Name</b> = <code>invoice_id</code>, and for the <b>Value</b> click the field picker and choose <b>Invoice ID</b>.</li>
-              <li style={{ margin: "4px 0" }}>Leave the rest as default → <b>Save</b> the webhook.</li>
+              <li style={{ margin: "4px 0" }}>Under <b>Parameters</b> click <b>+ Add</b>: <b>Parameter Name</b> = <code>invoice_id</code>, <b>Value</b> = field picker → <b>Invoice ID</b>.</li>
+              <li style={{ margin: "4px 0" }}><b>Save</b> the webhook.</li>
             </ul>
           </li>
-          <li style={{ margin: "7px 0" }}>Back on the rule, click <b>Save</b>.</li>
+          <li style={{ margin: "7px 0" }}>Back in the dialog, the new webhook is now selected under <b>Name</b> → click <b>Associate</b>.</li>
+          <li style={{ margin: "7px 0" }}>Finally, <b>Save</b> the workflow rule.</li>
         </ol>
       </div>
 
@@ -334,8 +336,8 @@ function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
           <li style={{ margin: "7px 0" }}>Click <b>Next</b>.</li>
           <li style={{ margin: "7px 0" }}><span style={num}>Workflow Type</span>: <b>Event Based</b>; <span style={num}>Action Type</span>: <b>Created</b>.</li>
           <li style={{ margin: "7px 0" }}><span style={num}>Criteria</span>: add <b>none</b> to cover all credit notes (if the <b>Criterion 1</b> dialog opens, set <b>Add criteria?</b> = <b>No</b> → <b>Done</b>).</li>
-          <li style={{ margin: "7px 0" }}><b>Actions</b> section → <b>Type</b> = <b>Webhook</b> → <b>+ New Webhook</b>.</li>
-          <li style={{ margin: "7px 0" }}>In the Webhook form:
+          <li style={{ margin: "7px 0" }}>On the <b>TRUE</b> branch → <b>+ Immediate Actions</b> → <b>Associate Immediate Actions</b> dialog.</li>
+          <li style={{ margin: "7px 0" }}><span style={num}>Action Type</span>: <b>Webhook</b>. <span style={num}>Name</span>: <b>+ Add New Action</b> → fill the webhook form:
             <ul style={{ margin: "6px 0", paddingLeft: 18 }}>
               <li style={{ margin: "4px 0" }}><b>Name</b>: <code>ZATCA Credit Note Webhook</code></li>
               <li style={{ margin: "4px 0" }}><b>URL to Notify</b>:
@@ -347,7 +349,7 @@ function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
               <li style={{ margin: "4px 0" }}><b>Save</b> the webhook.</li>
             </ul>
           </li>
-          <li style={{ margin: "7px 0" }}>Click <b>Save</b>.</li>
+          <li style={{ margin: "7px 0" }}>Back in the dialog → <b>Associate</b>, then <b>Save</b> the workflow rule.</li>
         </ol>
         <p style={hint}><b>Debit notes (383):</b> Zoho Books has no separate customer debit-note module — when issued as an invoice subtype they already flow through Rule A, and the middleware detects the debit type and references the original invoice. Nothing extra to set up.</p>
       </div>
