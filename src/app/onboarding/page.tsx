@@ -152,18 +152,6 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
                 </div>
               )}
 
-              {/* connection form (always available to (re)connect) */}
-              {integration === "odoo" && (
-                <div style={card}>
-                  <h4 style={{ margin: "0 0 6px" }}>Connection details — verified live</h4>
-                  <form action={saveOdooConnection}>
-                    <div style={row}><div style={{ flex: 1 }}><label style={label}>Odoo URL</label><input style={input} name="odoo_url" placeholder="https://yourco.odoo.com" required /></div><div style={{ flex: 1 }}><label style={label}>Database</label><input style={input} name="odoo_db" required /></div></div>
-                    <div style={row}><div style={{ flex: 1 }}><label style={label}>Username (email)</label><input style={input} name="odoo_username" required /></div><div style={{ flex: 1 }}><label style={label}>Password / API key</label><input style={input} name="odoo_password" type="password" required /></div></div>
-                    <button type="submit" style={{ ...btn, marginTop: 16 }}>Test &amp; connect →</button>
-                  </form>
-                </div>
-              )}
-
               {connected && <p style={{ fontSize: 13 }}><Link href="/onboarding?step=4" style={btn}>Next: ZATCA onboarding →</Link></p>}
             </>
           )}
@@ -207,6 +195,25 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   );
 }
 
+/** Numbered step header — one consistent numbering scheme across every guide. */
+function StepHead({ n, title, tag }: { n: number; title: string; tag?: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+      <span style={{ width: 24, height: 24, borderRadius: 999, background: "#1F6FB2", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{n}</span>
+      <h4 style={{ margin: 0, fontSize: 15 }}>{title}{tag && <span style={{ fontWeight: 400, color: "#8a97a6", fontSize: 12 }}> · {tag}</span>}</h4>
+    </div>
+  );
+}
+
+/** Connected / not-connected status pill. */
+function ConnPill({ connected }: { connected: boolean }) {
+  return (
+    <span style={{ background: connected ? "#e9f8ef" : "#fdeee9", color: connected ? "#1f9d57" : "#c0392b", fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 999 }}>
+      {connected ? "✓ Connected" : "Not connected yet"}
+    </span>
+  );
+}
+
 /** Compact, contextual integration-key control — rendered inside the step that needs it. */
 function KeyInline({ newkey }: { newkey?: string }) {
   return newkey ? (
@@ -220,35 +227,27 @@ function KeyInline({ newkey }: { newkey?: string }) {
 }
 
 function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string; connected: boolean }) {
-  const key = apiKey || "<generate your key in ① first>";
+  const key = apiKey || "PASTE_KEY_FROM_STEP_2";
   const invoiceUrl = `${base}/api/zoho/webhook?apiKey=${key}&entityType=invoice`;
   const creditNoteUrl = `${base}/api/zoho/webhook?apiKey=${key}&entityType=creditnote`;
   const num: React.CSSProperties = { fontWeight: 700, color: "#155a93" };
 
   return (
     <>
-      {/* OAUTH */}
+      {/* STEP 1 — CONNECT (instructions + form together) */}
       <div style={card}>
-        <h4 style={{ margin: "0 0 6px" }}>② Get your Zoho OAuth credentials</h4>
-        <p style={hint}>Zoho Books has no API to create webhooks or custom fields, so the steps below are done once in Zoho&apos;s own UI. We do handle the painful part — turning your grant code into a refresh token.</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+          <StepHead n={1} title="Connect Zoho Books" />
+          <span style={{ marginLeft: "auto" }}><ConnPill connected={connected} /></span>
+        </div>
+        <p style={hint}>Zoho Books has no API to create webhooks or fields, so a few steps happen in Zoho&apos;s UI — but we handle the painful OAuth part: paste a grant code and we turn it into a refresh token.</p>
         <ol style={ol}>
-          <li style={{ margin: "7px 0" }}>Open <a href="https://api-console.zoho.com" target="_blank" rel="noreferrer">api-console.zoho.com</a> — but use the console for <b>your data center</b> (e.g. <code>api-console.zoho.sa</code> if your Zoho Books URL is <code>books.zoho.sa</code>).</li>
-          <li style={{ margin: "7px 0" }}><b>Add Client</b> → <b>Self Client</b> → <b>Create</b>. On the <b>Client Secret</b> tab, copy the <b>Client ID</b> and <b>Client Secret</b>.</li>
-          <li style={{ margin: "7px 0" }}>Open the <b>Generate Code</b> tab. <b>Scope</b>: <code>ZohoBooks.fullaccess.all</code>; <b>Time Duration</b>: <code>10 minutes</code>; <b>Description</b>: <code>zatca</code> → <b>Create</b> → pick your portal → <b>copy the grant code</b> (starts <code>1000.</code>). It expires in 10 min.</li>
-          <li style={{ margin: "7px 0" }}><b>Organization ID</b>: Zoho Books → <b>Settings → Organizations</b> (the numeric id).</li>
-          <li style={{ margin: "7px 0" }}>Paste them into the form just below → <b>Test &amp; connect</b>. We exchange the code for a refresh token for you.</li>
+          <li style={{ margin: "7px 0" }}>Open the API console <b>for your data center</b> — e.g. <a href="https://api-console.zoho.sa" target="_blank" rel="noreferrer">api-console.zoho.sa</a> if your Zoho URL is <code>books.zoho.sa</code> (otherwise <code>.com</code>, <code>.eu</code>, …).</li>
+          <li style={{ margin: "7px 0" }}><b>Add Client → Self Client → Create</b>. On the <b>Client Secret</b> tab, copy <b>Client ID</b> and <b>Client Secret</b>.</li>
+          <li style={{ margin: "7px 0" }}>Open <b>Generate Code</b>. Scope <code>ZohoBooks.fullaccess.all</code>, Duration <code>10 minutes</code>, Description <code>zatca</code> → <b>Create</b> → pick portal → <b>copy the grant code</b> (<code>1000.…</code>).</li>
+          <li style={{ margin: "7px 0" }}><b>Organization ID</b>: Zoho Books → <b>Settings → Organizations</b>.</li>
         </ol>
-
-        {/* Connection form lives right here, with the instructions that fill it. */}
-        <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #eef2f6" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            <h5 style={{ margin: 0, fontSize: 14 }}>Connection details</h5>
-            <span style={connected
-              ? { background: "#e9f8ef", color: "#1f9d57", fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 999 }
-              : { background: "#fdeee9", color: "#c0392b", fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 999 }}>
-              {connected ? "✓ Connected" : "Not connected yet"}
-            </span>
-          </div>
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #eef2f6" }}>
           <form action={saveZohoConnection}>
             <div style={row}><div style={{ flex: 1 }}><label style={label}>Region</label>
               <select style={input} name="zoho_region" defaultValue="sa">
@@ -260,11 +259,10 @@ function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
                 <option value="jp">jp — Japan (.jp)</option>
                 <option value="ca">ca — Canada</option>
               </select>
-              <p style={hint}>Match your Zoho Books URL: <code>books.zoho.<b>sa</b></code> → sa, <code>.com</code> → com.</p></div><div style={{ flex: 1 }}><label style={label}>Organization ID</label><input style={input} name="zoho_org_id" required /></div></div>
+              <p style={hint}>Match your Zoho URL: <code>books.zoho.<b>sa</b></code> → sa.</p></div><div style={{ flex: 1 }}><label style={label}>Organization ID</label><input style={input} name="zoho_org_id" required /></div></div>
             <div style={row}><div style={{ flex: 1 }}><label style={label}>Client ID</label><input style={input} name="zoho_client_id" required /></div><div style={{ flex: 1 }}><label style={label}>Client secret</label><input style={input} name="zoho_client_secret" type="password" required /></div></div>
-            <label style={label}>Grant code <span style={{ color: "#1f9d57" }}>(recommended — we exchange it for you)</span></label>
+            <label style={label}>Grant code <span style={{ color: "#1f9d57" }}>(recommended — generate it right before connecting; expires in minutes)</span></label>
             <input style={input} name="zoho_grant_code" placeholder="1000.xxxxxxxx… from Self Client → Generate Code" />
-            <p style={hint}>From api-console.zoho → your Self Client → <b>Generate Code</b>, scope <code>ZohoBooks.fullaccess.all</code>. Codes expire in minutes — generate it right before connecting.</p>
             <details style={{ marginTop: 6 }}>
               <summary style={{ cursor: "pointer", color: "#6b7785", fontSize: 12.5 }}>Already have a refresh token? Use it instead</summary>
               <label style={label}>Refresh token</label><input style={input} name="zoho_refresh_token" type="password" />
@@ -274,11 +272,18 @@ function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
         </div>
       </div>
 
-      {/* CUSTOM FIELDS (optional) */}
+      {/* STEP 2 — WEBHOOK KEY */}
       <div style={card}>
-        <h4 style={{ margin: "0 0 6px" }}>③ Add ZATCA custom fields <span style={{ fontWeight: 400, color: "#8a97a6", fontSize: 12 }}>(optional)</span></h4>
+        <StepHead n={2} title="Generate your webhook key" />
+        <p style={hint}>One key authenticates both workflows below — it&apos;s embedded into the URLs in steps 4 &amp; 5 automatically once generated. Shown only once.</p>
+        <div style={{ marginTop: 8 }}><KeyInline newkey={apiKey} /></div>
+      </div>
+
+      {/* STEP 3 — CUSTOM FIELDS (optional) */}
+      <div style={card}>
+        <StepHead n={3} title="Add ZATCA custom fields" tag="optional" />
         <p style={hint}>Lets the cleared status/UUID/QR show on the document itself. Even without them, write-back still posts a timeline comment and attaches the compliance PDF.</p>
-        <p style={{ fontSize: 13, color: "#33414f", margin: "6px 0" }}>In Zoho Books → <b>Settings → Preferences → Invoices → Field Customization → + New Custom Field</b>, add each of these (then do the same under <b>Preferences → Credit Notes</b>):</p>
+        <p style={{ fontSize: 13, color: "#33414f", margin: "6px 0" }}>In Zoho Books → <b>Settings → Preferences → Invoices → Field Customization → + New Custom Field</b>, add each of these (then the same under <b>Preferences → Credit Notes</b>):</p>
         <table style={{ fontSize: 12.5, borderCollapse: "collapse", margin: "4px 0" }}><tbody>
           <tr><td style={{ padding: "2px 16px 2px 0" }}><code>cf_zatca_uuid</code></td><td style={{ color: "#6b7785" }}>Data type: Text (single line)</td></tr>
           <tr><td style={{ padding: "2px 16px 2px 0" }}><code>cf_zatca_status</code></td><td style={{ color: "#6b7785" }}>Data type: Text or Dropdown</td></tr>
@@ -287,14 +292,10 @@ function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
         </tbody></table>
       </div>
 
-      {/* INVOICE WORKFLOW — full click-by-click */}
+      {/* STEP 4 — INVOICE WORKFLOW */}
       <div style={card}>
-        <h4 style={{ margin: "0 0 6px" }}>④ Auto-send <u>invoices</u> — Workflow Rule A</h4>
-        <div style={{ background: "#f7f9fc", border: "1px solid #e3e8ef", borderRadius: 8, padding: "10px 12px", marginBottom: 10 }}>
-          <p style={{ ...hint, margin: "0 0 6px" }}><b>First, your webhook key.</b> One key covers both workflows below; it&apos;s embedded into the URLs automatically once generated.</p>
-          <KeyInline newkey={apiKey} />
-        </div>
-        <p style={hint}>Then go to <b>Settings → Automation → Workflow Rules → + New Workflow Rule</b>, and fill the screen exactly:</p>
+        <StepHead n={4} title="Auto-send invoices" tag="Workflow Rule A" />
+        <p style={hint}>Go to <b>Settings → Automation → Workflow Rules → + New Workflow Rule</b>, and fill the screen exactly:</p>
         <ol style={ol}>
           <li style={{ margin: "7px 0" }}><span style={num}>Workflow Rule Name</span>: <code>ZATCA Clearance - Invoices</code></li>
           <li style={{ margin: "7px 0" }}><span style={num}>Description</span>: leave blank.</li>
@@ -320,9 +321,9 @@ function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
         </ol>
       </div>
 
-      {/* CREDIT NOTE WORKFLOW — full click-by-click, separate */}
+      {/* STEP 5 — CREDIT NOTE WORKFLOW */}
       <div style={card}>
-        <h4 style={{ margin: "0 0 6px" }}>⑤ Auto-send <u>credit notes</u> — Workflow Rule B</h4>
+        <StepHead n={5} title="Auto-send credit notes" tag="Workflow Rule B" />
         <p style={hint}>A second, separate rule on the Credit Notes module so 381 adjustments clear too. Same path: <b>Settings → Automation → Workflow Rules → + New Workflow Rule</b>.</p>
         <ol style={ol}>
           <li style={{ margin: "7px 0" }}><span style={num}>Workflow Rule Name</span>: <code>ZATCA Clearance - Credit Notes</code></li>
@@ -350,33 +351,43 @@ function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
         <p style={hint}><b>Debit notes (383):</b> Zoho Books has no separate customer debit-note module — when issued as an invoice subtype they already flow through Rule A, and the middleware detects the debit type and references the original invoice. Nothing extra to set up.</p>
       </div>
 
-      {/* TEST */}
+      {/* STEP 6 — TEST */}
       <div style={card}>
-        <h4 style={{ margin: "0 0 6px" }}>⑥ Test</h4>
-        <p style={{ ...hint, margin: 0 }}>Create an invoice in Zoho Books and mark it <b>Sent</b> (or just Create, per your trigger). Within a few seconds the middleware clears it on ZATCA simulation, posts a comment on the document, attaches the QR + compliance PDF, and it appears on your <Link href="/invoices">Invoices</Link> page here. Then do the same with a Credit Note.</p>
+        <StepHead n={6} title="Test" />
+        <p style={{ ...hint, margin: 0 }}>Create an invoice in Zoho Books and mark it <b>Sent</b> (or just Create, per your trigger). Within a few seconds the middleware clears it on ZATCA simulation, posts a comment, attaches the QR + compliance PDF, and it appears on your <Link href="/invoices">Invoices</Link> page. Every attempt — success or failure — shows on <Link href="/activity">Activity</Link> with the reason. Then repeat with a Credit Note.</p>
       </div>
     </>
   );
 }
 
 function OdooGuide({ base, apiKey, connected }: { base: string; apiKey?: string; connected: boolean }) {
-  const hookUrl = `${base}/api/odoo/webhook?apiKey=${apiKey || "<generate your key in ① first>"}`;
+  const hookUrl = `${base}/api/odoo/webhook?apiKey=${apiKey || "PASTE_KEY_GENERATED_BELOW"}`;
   return (
     <>
+      {/* STEP 1 — CONNECT (instructions + form together) */}
       <div style={card}>
-        <h4 style={{ margin: "0 0 6px" }}>② Find your Odoo connection values</h4>
-        <details style={{ fontSize: 12.5 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+          <StepHead n={1} title="Connect your Odoo" />
+          <span style={{ marginLeft: "auto" }}><ConnPill connected={connected} /></span>
+        </div>
+        <details style={{ fontSize: 12.5, marginBottom: 10 }}>
           <summary style={{ cursor: "pointer", color: "#1F6FB2", fontWeight: 600 }}>🔍 Where do I find each value?</summary>
           <div style={{ padding: "10px 12px", marginTop: 6, background: "#f7f9fc", border: "1px solid #e3e8ef", borderRadius: 8, color: "#33414f", lineHeight: 1.7 }}>
             <p style={{ margin: "0 0 6px" }}><b>URL</b> — your browser&apos;s address bar when Odoo is open, e.g. <code>https://yourco.odoo.com</code>.</p>
-            <p style={{ margin: "0 0 6px" }}><b>Database</b> — usually the word before <code>.odoo.com</code>. Unsure? Settings → bottom → &quot;Activate developer mode&quot;, it then shows in Settings → Technical / ⚙️ About.</p>
+            <p style={{ margin: "0 0 6px" }}><b>Database</b> — usually the word before <code>.odoo.com</code> (for Odoo Online we auto-correct casing). Unsure? Settings → bottom → &quot;Activate developer mode&quot;, then Settings → Technical / ⚙️ About.</p>
             <p style={{ margin: "0 0 6px" }}><b>Username</b> — the email you log into Odoo with.</p>
-            <p style={{ margin: 0 }}><b>API key</b> — profile photo → My Profile → Account Security → New API Key → name it &quot;ZATCA&quot; → Generate → copy.</p>
+            <p style={{ margin: 0 }}><b>API key</b> — profile photo → My Profile → Account Security → New API Key → name it &quot;ZATCA&quot; → Generate → copy. (With 2FA on, you must use an API key, not your password.)</p>
           </div>
         </details>
+        <form action={saveOdooConnection}>
+          <div style={row}><div style={{ flex: 1 }}><label style={label}>Odoo URL</label><input style={input} name="odoo_url" placeholder="https://yourco.odoo.com" required /></div><div style={{ flex: 1 }}><label style={label}>Database</label><input style={input} name="odoo_db" required /></div></div>
+          <div style={row}><div style={{ flex: 1 }}><label style={label}>Username (email)</label><input style={input} name="odoo_username" required /></div><div style={{ flex: 1 }}><label style={label}>Password / API key</label><input style={input} name="odoo_password" type="password" required /></div></div>
+          <button type="submit" style={{ ...btn, marginTop: 16 }}>Test &amp; connect →</button>
+        </form>
       </div>
+
       <div style={card}>
-        <h4 style={{ margin: "0 0 6px" }}>③ Make it automatic in Odoo</h4>
+        <StepHead n={2} title="Set up automation in Odoo" />
 
         {/* Primary path: we do it for you over RPC */}
         <div style={{ background: "#eef5fc", border: "1px solid #bcd9f2", borderRadius: 8, padding: "14px 16px", marginBottom: 14 }}>
@@ -440,7 +451,12 @@ function OdooGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
           </div>
         </details>
 
-        <p style={{ ...hint, marginTop: 14 }}><b>Test (either path):</b> open a draft customer invoice in Odoo → <b>Confirm</b> (post it). In a few seconds its <code>x_zatca_status</code> becomes <code>cleared</code>/<code>reported</code> with a QR + UUID, and it shows on your Dashboard here. The middleware de-duplicates by invoice number, so the same invoice won&apos;t create duplicate records.</p>
+      </div>
+
+      {/* STEP 3 — TEST */}
+      <div style={card}>
+        <StepHead n={3} title="Test" />
+        <p style={{ ...hint, margin: 0 }}>Open a draft customer invoice in Odoo → <b>Confirm</b> (post it). In a few seconds its <code>x_zatca_status</code> becomes <code>cleared</code>, with a QR + UUID and a compliance PDF attached, and it shows on your <Link href="/invoices">Invoices</Link> page. Every attempt — success or failure — shows on <Link href="/activity">Activity</Link> with the reason. The middleware de-duplicates by invoice number, so the same invoice won&apos;t create duplicates.</p>
       </div>
     </>
   );
