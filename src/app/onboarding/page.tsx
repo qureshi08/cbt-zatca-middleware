@@ -141,12 +141,15 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
               {sp.pok && <div style={banner("#e9f8ef", "#b6e4c6", "#1f9d57")}>✅ Automated setup done in Odoo: {sp.pok} You can post an invoice now.</div>}
               {sp.perr && <div style={banner("#fff6e0", "#f0d48a", "#8a5a00")}>⚠️ Automated setup didn&apos;t fully complete: {sp.perr} — you can use the manual steps below.</div>}
 
-              <KeyBlock newkey={sp.newkey} />
-
               {integration === "zoho" && <ZohoGuide base={base} apiKey={sp.newkey} connected={connected} />}
               {integration === "odoo" && <OdooGuide base={base} apiKey={sp.newkey} connected={connected} />}
               {integration === "custom" && (
-                <div style={card}><h4 style={{ margin: "0 0 8px" }}>Call our API</h4><div style={copybox}>POST {base}/api/v1/zatca/invoices/submit</div><p style={hint}>Use your integration key (above) as <code>x-api-key</code>. Generating a key marks this connected.</p></div>
+                <div style={card}>
+                  <h4 style={{ margin: "0 0 8px" }}>Call our API</h4>
+                  <div style={copybox}>POST {base}/api/v1/zatca/invoices/submit</div>
+                  <p style={hint}>Send your integration key as the <code>x-api-key</code> header. Generating a key marks this connected.</p>
+                  <div style={{ marginTop: 8 }}><KeyInline newkey={sp.newkey} /></div>
+                </div>
               )}
 
               {/* connection form (always available to (re)connect) */}
@@ -204,14 +207,15 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   );
 }
 
-function KeyBlock({ newkey }: { newkey?: string }) {
-  return (
-    <div style={card}>
-      <h4 style={{ margin: "0 0 4px" }}>① Your integration key</h4>
-      <p style={hint}>Paste as the <code>x-api-key</code> header in your accounting software (below). Shown only once.</p>
-      {newkey ? (<><div style={copybox}>{newkey}</div><p style={{ color: "#c77700", fontSize: 12 }}>⚠️ Copy it now — shown once. Lost it? Generate a new one.</p></>)
-        : (<form action={generateWebhookKey}><button type="submit" style={btn}>Generate integration key</button></form>)}
-    </div>
+/** Compact, contextual integration-key control — rendered inside the step that needs it. */
+function KeyInline({ newkey }: { newkey?: string }) {
+  return newkey ? (
+    <>
+      <div style={copybox}>{newkey}</div>
+      <p style={{ color: "#c77700", fontSize: 11.5, margin: "2px 0 0" }}>⚠️ Shown once — it&apos;s now embedded in the URL(s) below; copy them now. Lost it? Generate a new one.</p>
+    </>
+  ) : (
+    <form action={generateWebhookKey}><button type="submit" style={btn}>Generate integration key</button></form>
   );
 }
 
@@ -276,7 +280,11 @@ function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
       {/* INVOICE WORKFLOW — full click-by-click */}
       <div style={card}>
         <h4 style={{ margin: "0 0 6px" }}>④ Auto-send <u>invoices</u> — Workflow Rule A</h4>
-        <p style={hint}>Go to <b>Settings → Automation → Workflow Rules → + New Workflow Rule</b>, then fill the screen exactly:</p>
+        <div style={{ background: "#f7f9fc", border: "1px solid #e3e8ef", borderRadius: 8, padding: "10px 12px", marginBottom: 10 }}>
+          <p style={{ ...hint, margin: "0 0 6px" }}><b>First, your webhook key.</b> One key covers both workflows below; it&apos;s embedded into the URLs automatically once generated.</p>
+          <KeyInline newkey={apiKey} />
+        </div>
+        <p style={hint}>Then go to <b>Settings → Automation → Workflow Rules → + New Workflow Rule</b>, and fill the screen exactly:</p>
         <ol style={ol}>
           <li style={{ margin: "7px 0" }}><span style={num}>Workflow Rule Name</span>: <code>ZATCA Clearance - Invoices</code></li>
           <li style={{ margin: "7px 0" }}><span style={num}>Description</span>: leave blank.</li>
@@ -366,7 +374,7 @@ function OdooGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
           <p style={{ ...hint, margin: "0 0 10px" }}>
             We&apos;ll connect to your Odoo and create everything automatically — install the <b>Automation Rules</b> app
             if needed, add the webhook <b>Server Action</b>, and the <b>Automated Action</b> that fires it on every posted
-            customer invoice. No Technical menus, no clicking.
+            customer invoice. No Technical menus, no clicking — and <b>no integration key to generate</b> (we create and embed one for you).
           </p>
           {connected ? (
             <form action={provisionOdooAutomation}>
@@ -381,6 +389,11 @@ function OdooGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
           <summary style={{ cursor: "pointer", color: "#6b7785", fontWeight: 600 }}>Prefer to do it by hand in Odoo? (manual steps)</summary>
           <div style={{ marginTop: 10 }}>
         <p style={hint}>Create a <b>Server Action</b> that sends each posted invoice to this middleware, and an <b>Automated Action</b> that runs it. We use Odoo&apos;s native <b>Send Webhook Notification</b> — Odoo&apos;s &quot;Execute Code&quot; sandbox blocks <code>import</code> (the &quot;forbidden opcode&quot; error), so a webhook action is the reliable, no-code way. If you don&apos;t see <b>Automated Actions</b> under Settings → Technical → Automation, install the <b>Automation Rules</b> app first (Apps → search <code>Automation Rules</code> → Activate).</p>
+
+        <div style={{ background: "#f7f9fc", border: "1px solid #e3e8ef", borderRadius: 8, padding: "10px 12px", margin: "10px 0" }}>
+          <p style={{ ...hint, margin: "0 0 6px" }}><b>Webhook key (manual path only).</b> Generate it — it&apos;s embedded in the URL you paste in step A6 below.</p>
+          <KeyInline newkey={apiKey} />
+        </div>
 
         <p style={{ fontWeight: 700, margin: "14px 0 4px", color: "#155a93" }}>A. Create the Server Action</p>
         <ol style={ol}>
