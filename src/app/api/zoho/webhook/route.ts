@@ -4,6 +4,7 @@ import { generateInvoiceAction } from '@/lib/zatca/actions';
 import { supabaseAdmin } from '@/lib/supabase';
 import { ZohoClient, type ZohoEntityType } from '@/lib/zoho/client';
 import { generateInvoicePDF } from '@/lib/zatca/pdf/generator';
+import { decryptSecret } from '@/lib/secrets';
 
 /**
  * POST /api/zoho/webhook
@@ -160,13 +161,13 @@ export async function POST(req: NextRequest) {
                 }, { status: 400 });
             }
 
-            // 2. Initialize Zoho client
+            // 2. Initialize Zoho client (secrets are stored encrypted at rest — decrypt them).
             const zoho = new ZohoClient({
                 zohoRegion: config.zoho_region,
                 zohoOrgId: config.zoho_org_id,
                 zohoClientId: config.zoho_client_id,
-                zohoClientSecret: config.zoho_client_secret,
-                zohoRefreshToken: config.zoho_refresh_token,
+                zohoClientSecret: decryptSecret(config.zoho_client_secret) || config.zoho_client_secret,
+                zohoRefreshToken: decryptSecret(config.zoho_refresh_token) || config.zoho_refresh_token,
             });
 
             // 3. Fetch document details from Zoho

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AuthService } from '@/lib/auth-service';
 import { supabaseAdmin } from '@/lib/supabase';
 import { ZohoClient } from '@/lib/zoho/client';
+import { encryptSecret, decryptSecret } from '@/lib/secrets';
 
 /**
  * GET /api/zoho/config
@@ -74,7 +75,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Zoho Region, Organization ID, and Client ID are required' }, { status: 400 });
         }
 
-        // Secrets are write-only from the UI: if omitted on test/provision/save, reuse stored values.
+        // Secrets are write-only from the UI: if omitted on test/provision/save, reuse the
+        // stored values — which are encrypted at rest, so decrypt them before use.
         let finalSecret = zohoClientSecret;
         let finalRefresh = zohoRefreshToken;
         if (!finalSecret || !finalRefresh) {
@@ -83,8 +85,8 @@ export async function POST(req: NextRequest) {
                 .select('zoho_client_secret, zoho_refresh_token')
                 .eq('organization_id', org.id)
                 .maybeSingle();
-            finalSecret = finalSecret || existing?.zoho_client_secret;
-            finalRefresh = finalRefresh || existing?.zoho_refresh_token;
+            finalSecret = finalSecret || decryptSecret(existing?.zoho_client_secret) || undefined;
+            finalRefresh = finalRefresh || decryptSecret(existing?.zoho_refresh_token) || undefined;
         }
 
         if ((!finalSecret || !finalRefresh) && (action === 'test' || action === 'provision' || action === 'save')) {
@@ -147,9 +149,10 @@ export async function POST(req: NextRequest) {
                 updated_at: new Date().toISOString(),
             };
 
-            // Only persist secrets when freshly supplied.
-            if (zohoClientSecret) dbData.zoho_client_secret = zohoClientSecret;
-            if (zohoRefreshToken) dbData.zoho_refresh_token = zohoRefreshToken;
+            // Only persist secrets when freshly supplied — encrypted at rest, matching
+            // the saveZohoConnection server action so both write paths agree.
+            if (zohoClientSecret) dbData.zoho_client_secret = encryptSecret(zohoClientSecret);
+            if (zohoRefreshToken) dbData.zoho_refresh_token = encryptSecret(zohoRefreshToken);
 
             const { error: upsertError } = await supabaseAdmin
                 .from('zoho_config')

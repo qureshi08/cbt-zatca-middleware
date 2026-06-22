@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AuthService } from '@/lib/auth-service';
 import { supabaseAdmin } from '@/lib/supabase';
 import { OdooClient } from '@/lib/odoo/client';
+import { encryptSecret, decryptSecret } from '@/lib/secrets';
 
 /**
  * GET /api/odoo/config
@@ -81,7 +82,8 @@ export async function POST(req: NextRequest) {
                 .select('odoo_password')
                 .eq('organization_id', org.id)
                 .maybeSingle();
-            finalPassword = existing?.odoo_password;
+            // Stored password is encrypted at rest — decrypt before use.
+            finalPassword = decryptSecret(existing?.odoo_password) || existing?.odoo_password;
         }
 
         if (!finalPassword && (action === 'test' || action === 'provision' || action === 'save')) {
@@ -144,9 +146,10 @@ export async function POST(req: NextRequest) {
                 updated_at: new Date().toISOString()
             };
 
-            // Only update password if a new one is typed/sent
+            // Only update password if a new one is typed/sent — encrypted at rest,
+            // matching the saveOdooConnection server action so both write paths agree.
             if (odooPassword) {
-                dbData.odoo_password = odooPassword;
+                dbData.odoo_password = encryptSecret(odooPassword);
             }
 
             const { error: upsertError } = await supabaseAdmin
