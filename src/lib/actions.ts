@@ -39,7 +39,7 @@ export async function saveProfile(fd: FormData) {
     .eq("id", org.id);
   revalidatePath("/profile");
   revalidatePath("/");
-  redirect("/onboarding");
+  redirect("/onboarding?step=2");
 }
 
 /** Choose the accounting integration (odoo | zoho | custom). */
@@ -49,7 +49,7 @@ export async function setIntegration(fd: FormData) {
   if (!["odoo", "zoho", "custom"].includes(integration)) throw new Error("Invalid integration");
   await supabaseAdmin.from("organizations").update({ integration }).eq("id", org.id);
   revalidatePath("/onboarding");
-  redirect("/onboarding");
+  redirect("/onboarding?step=3");
 }
 
 /**
@@ -68,7 +68,7 @@ export async function generateWebhookKey() {
     status: "active",
   });
   revalidatePath("/onboarding");
-  redirect(`/onboarding?newkey=${encodeURIComponent(raw)}`);
+  redirect(`/onboarding?step=3&newkey=${encodeURIComponent(raw)}`);
 }
 
 /**
@@ -103,14 +103,14 @@ export async function saveZohoConnection(fd: FormData) {
   revalidatePath("/onboarding");
   revalidatePath("/");
 
-  if (!test.success) redirect(`/onboarding?cerr=${encodeURIComponent(test.error || "Could not reach Zoho — check your credentials.")}`);
+  if (!test.success) redirect(`/onboarding?step=3&cerr=${encodeURIComponent(test.error || "Could not reach Zoho — check your credentials.")}`);
 
   let warn = "";
   try {
     const prov = await zoho.provisionCustomFields();
     if (!prov.success && prov.errors?.length) warn = "Connected, but create these Zoho fields: " + prov.errors.join(", ");
   } catch { /* field check is best-effort */ }
-  redirect(warn ? `/onboarding?cwarn=${encodeURIComponent(warn)}` : "/onboarding");
+  redirect(warn ? `/onboarding?step=3&cwarn=${encodeURIComponent(warn)}` : "/onboarding?step=3");
 }
 
 /**
@@ -142,14 +142,14 @@ export async function saveOdooConnection(fd: FormData) {
   revalidatePath("/onboarding");
   revalidatePath("/");
 
-  if (!test.success) redirect(`/onboarding?cerr=${encodeURIComponent(test.error || "Could not reach Odoo — check URL/DB/credentials.")}`);
+  if (!test.success) redirect(`/onboarding?step=3&cerr=${encodeURIComponent(test.error || "Could not reach Odoo — check URL/DB/credentials.")}`);
 
   let warn = "";
   try {
     const prov = await odoo.provisionCustomFields();
     if (!prov.success && prov.errors?.length) warn = "Connected, but Odoo field provisioning had issues: " + prov.errors.join(", ");
   } catch { /* best-effort */ }
-  redirect(warn ? `/onboarding?cwarn=${encodeURIComponent(warn)}` : "/onboarding");
+  redirect(warn ? `/onboarding?step=3&cwarn=${encodeURIComponent(warn)}` : "/onboarding?step=3");
 }
 
 /** Let the user change their integration choice. */
@@ -157,7 +157,7 @@ export async function resetIntegration() {
   const org = await requireOrg();
   await supabaseAdmin.from("organizations").update({ integration: null }).eq("id", org.id);
   revalidatePath("/onboarding");
-  redirect("/onboarding");
+  redirect("/onboarding?step=2");
 }
 
 /**
@@ -176,7 +176,7 @@ export async function runZatcaOnboarding(fd: FormData) {
   }
   revalidatePath("/onboarding");
   revalidatePath("/");
-  redirect(err ? `/onboarding?zerr=${encodeURIComponent(err)}` : "/onboarding");
+  redirect(err ? `/onboarding?step=4&zerr=${encodeURIComponent(err)}` : "/onboarding?step=4");
 }
 
 /**
@@ -203,7 +203,7 @@ export async function sendTestInvoice() {
 
   if (!res.success || !res.data) {
     revalidatePath("/onboarding");
-    redirect(`/onboarding?terr=${encodeURIComponent(res.error || "Test invoice failed")}`);
+    redirect(`/onboarding?step=4&terr=${encodeURIComponent(res.error || "Test invoice failed")}`);
   }
 
   const data = res.data!;
@@ -230,7 +230,7 @@ export async function sendTestInvoice() {
   revalidatePath("/");
   // Do not claim success if the invoice didn't actually persist.
   if (saveErr) {
-    redirect(`/onboarding?terr=${encodeURIComponent(`Cleared as ${zStatus} but NOT saved: ${saveErr.message}. Run migration 003.`)}`);
+    redirect(`/onboarding?step=4&terr=${encodeURIComponent(`Cleared as ${zStatus} but NOT saved: ${saveErr.message}. Run migration 003.`)}`);
   }
-  redirect(`/onboarding?tok=${encodeURIComponent(`${invoiceId} → ${zStatus || "DONE"}`)}`);
+  redirect(`/onboarding?step=4&tok=${encodeURIComponent(`${invoiceId} → ${zStatus || "DONE"}`)}`);
 }
