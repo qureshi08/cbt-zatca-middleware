@@ -301,10 +301,11 @@ function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
           <li style={{ margin: "7px 0" }}><span style={num}>Description</span>: leave blank.</li>
           <li style={{ margin: "7px 0" }}><span style={num}>Module</span>: select <b>Invoice</b>.</li>
           <li style={{ margin: "7px 0" }}><span style={num}>Execute Workflow For</span>: choose <b>All Invoice Types</b>.</li>
-          <li style={{ margin: "7px 0" }}>Click <b>Next</b>.</li>
-          <li style={{ margin: "7px 0" }}>On <b>When do you want to execute this workflow?</b> → pick <b>Event</b> → tick <b>Created</b>. <span style={hint}>(Want only finalized invoices? Tick <b>Sent</b> instead of, or as well as, Created.)</span></li>
-          <li style={{ margin: "7px 0" }}><b>Conditions</b> / &quot;Configure your workflow conditions&quot;: leave the default <b>All Invoices</b> (no filter).</li>
-          <li style={{ margin: "7px 0" }}>Scroll to <b>Actions → Immediate Actions</b>. In the <b>Type</b> dropdown choose <b>Webhook</b>, then in the box next to it click <b>+ New Webhook</b>.</li>
+          <li style={{ margin: "7px 0" }}>Click <b>Next</b>. You land on <b>Workflow Rule Execution Condition</b>.</li>
+          <li style={{ margin: "7px 0" }}><span style={num}>Workflow Type</span>: select <b>Event Based</b>.</li>
+          <li style={{ margin: "7px 0" }}><span style={num}>Action Type</span>: select <b>Created</b> from the dropdown. <span style={hint}>(Only want finalized invoices? Choose <b>Submitted</b> instead.)</span> It then reads &quot;…executed when invoice is created&quot;.</li>
+          <li style={{ margin: "7px 0" }}><span style={num}>Criteria</span>: to clear <b>every</b> invoice, add <b>no</b> criteria — just skip the <b>+ New Criteria</b> button. If a <b>Criterion 1</b> dialog opens, set <b>Add criteria for this workflow rule?</b> to <b>No</b> and click <b>Done</b>. (Add a criterion only if you want to filter which invoices clear.)</li>
+          <li style={{ margin: "7px 0" }}>Find the <b>Actions</b> section (may read &quot;Instant Actions&quot;). Click <b>+</b> / the action box, set <b>Type</b> = <b>Webhook</b>, then <b>+ New Webhook</b> (or <b>Configure</b>).</li>
           <li style={{ margin: "7px 0" }}>In the Webhook form:
             <ul style={{ margin: "6px 0", paddingLeft: 18 }}>
               <li style={{ margin: "4px 0" }}><b>Name</b>: <code>ZATCA Invoice Webhook</code></li>
@@ -331,9 +332,9 @@ function ZohoGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
           <li style={{ margin: "7px 0" }}><span style={num}>Module</span>: select <b>Credit Note</b>.</li>
           <li style={{ margin: "7px 0" }}><span style={num}>Execute Workflow For</span>: choose <b>All</b> (if the option appears).</li>
           <li style={{ margin: "7px 0" }}>Click <b>Next</b>.</li>
-          <li style={{ margin: "7px 0" }}><b>When</b>: pick <b>Event</b> → tick <b>Created</b>.</li>
-          <li style={{ margin: "7px 0" }}><b>Conditions</b>: leave default <b>All Credit Notes</b>.</li>
-          <li style={{ margin: "7px 0" }}><b>Actions → Immediate Actions → Type</b> = <b>Webhook</b> → <b>+ New Webhook</b>.</li>
+          <li style={{ margin: "7px 0" }}><span style={num}>Workflow Type</span>: <b>Event Based</b>; <span style={num}>Action Type</span>: <b>Created</b>.</li>
+          <li style={{ margin: "7px 0" }}><span style={num}>Criteria</span>: add <b>none</b> to cover all credit notes (if the <b>Criterion 1</b> dialog opens, set <b>Add criteria?</b> = <b>No</b> → <b>Done</b>).</li>
+          <li style={{ margin: "7px 0" }}><b>Actions</b> section → <b>Type</b> = <b>Webhook</b> → <b>+ New Webhook</b>.</li>
           <li style={{ margin: "7px 0" }}>In the Webhook form:
             <ul style={{ margin: "6px 0", paddingLeft: 18 }}>
               <li style={{ margin: "4px 0" }}><b>Name</b>: <code>ZATCA Credit Note Webhook</code></li>
