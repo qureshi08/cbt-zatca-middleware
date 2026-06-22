@@ -22,6 +22,9 @@ const banner = (bg: string, br: string, fg: string): React.CSSProperties => ({ b
 
 const STEPS = ["Profile", "Integration", "Connect", "ZATCA"];
 
+// Odoo auto-provisioning (module install + several RPC round-trips) can run long.
+export const maxDuration = 60;
+
 export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ step?: string; newkey?: string; zerr?: string; cerr?: string; cwarn?: string; terr?: string; tok?: string; pok?: string; perr?: string }> }) {
   const sp = await searchParams;
   const state = await getOnboardingState();

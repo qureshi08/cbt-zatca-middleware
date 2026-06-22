@@ -163,55 +163,62 @@ export async function saveOdooConnection(fd: FormData) {
 export async function provisionOdooAutomation() {
   const org = await requireOrg();
 
-  const { data: config } = await supabaseAdmin
-    .from("odoo_config")
-    .select("odoo_url, odoo_db, odoo_username, odoo_password")
-    .eq("organization_id", org.id)
-    .maybeSingle();
-
-  if (!config?.odoo_url) {
-    redirect(`/onboarding?step=3&cerr=${encodeURIComponent("Connect Odoo first, then run automated setup.")}`);
-  }
-
-  // Mint a dedicated integration key for the webhook (raw value only available now,
-  // so we embed it directly into the action URL inside Odoo).
-  const raw = "sk_zatca_live_" + crypto.randomBytes(24).toString("hex");
-  const hash = crypto.createHash("sha256").update(raw).digest("hex");
-  await supabaseAdmin.from("api_keys").insert({
-    organization_id: org.id,
-    key_prefix: raw.slice(0, 20),
-    key_hash: hash,
-    name: "Odoo webhook key",
-    status: "active",
-  });
-
-  // Build the public webhook URL from the live request host (no env var needed).
-  const h = await headers();
-  const host = h.get("x-forwarded-host") || h.get("host") || "localhost:3000";
-  const proto = h.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
-  const webhookUrl = `${proto}://${host}/api/odoo/webhook?apiKey=${encodeURIComponent(raw)}`;
-
-  const odoo = new OdooClient({
-    odooUrl: config.odoo_url,
-    odooDb: config.odoo_db,
-    odooUsername: config.odoo_username,
-    odooPassword: decryptSecret(config.odoo_password) || config.odoo_password,
-  });
-
-  let result: { success: boolean; steps: string[]; errors: string[] };
+  // Everything is wrapped so ANY failure surfaces as a banner (never a silent
+  // "nothing happened"). Exactly one redirect, at the very end, outside the try.
+  let ok = false;
+  let msg = "";
   try {
-    result = await odoo.provisionAutomation(webhookUrl);
+    const { data: config } = await supabaseAdmin
+      .from("odoo_config")
+      .select("odoo_url, odoo_db, odoo_username, odoo_password")
+      .eq("organization_id", org.id)
+      .maybeSingle();
+
+    if (!config?.odoo_url) {
+      msg = "Connect Odoo first (form below), then run automated setup.";
+    } else {
+      // Mint a dedicated integration key for the webhook (raw value only available
+      // now, so we embed it directly into the action URL inside Odoo).
+      const raw = "sk_zatca_live_" + crypto.randomBytes(24).toString("hex");
+      const hash = crypto.createHash("sha256").update(raw).digest("hex");
+      await supabaseAdmin.from("api_keys").insert({
+        organization_id: org.id,
+        key_prefix: raw.slice(0, 20),
+        key_hash: hash,
+        name: "Odoo webhook key",
+        status: "active",
+      });
+
+      // Build the public webhook URL from the live request host (no env var needed).
+      const h = await headers();
+      const host = h.get("x-forwarded-host") || h.get("host") || "localhost:3000";
+      const proto = h.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
+      const webhookUrl = `${proto}://${host}/api/odoo/webhook?apiKey=${encodeURIComponent(raw)}`;
+
+      const odoo = new OdooClient({
+        odooUrl: config.odoo_url,
+        odooDb: config.odoo_db,
+        odooUsername: config.odoo_username,
+        odooPassword: decryptSecret(config.odoo_password) || config.odoo_password,
+      });
+
+      const result = await odoo.provisionAutomation(webhookUrl);
+      ok = result.success;
+      msg = ok
+        ? result.steps.join(" ")
+        : [...result.steps, ...result.errors].join(" — ");
+    }
   } catch (e) {
-    result = { success: false, steps: [], errors: [e instanceof Error ? e.message : "Automated setup failed"] };
+    ok = false;
+    msg = e instanceof Error ? e.message : "Automated setup failed unexpectedly.";
   }
 
   revalidatePath("/onboarding");
-
-  if (result.success) {
-    redirect(`/onboarding?step=3&pok=${encodeURIComponent(result.steps.join(" "))}`);
-  }
-  const msg = [...result.steps, ...result.errors].join(" — ");
-  redirect(`/onboarding?step=3&perr=${encodeURIComponent(msg || "Automated setup could not complete; use the manual steps below.")}`);
+  redirect(
+    ok
+      ? `/onboarding?step=3&pok=${encodeURIComponent(msg)}`
+      : `/onboarding?step=3&perr=${encodeURIComponent(msg || "Automated setup could not complete; use the manual steps below.")}`,
+  );
 }
 
 /** Let the user change their integration choice. */
