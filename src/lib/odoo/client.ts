@@ -423,9 +423,11 @@ export class OdooClient {
             'x_zatca_status'
         ];
 
-        // Check and append optional compliance fields dynamically
+        // Check and append optional compliance fields dynamically.
+        // `reversed_entry_id` links a credit note (out_refund) to its source; `debit_origin_id`
+        // links a debit note (out_invoice created via Odoo's Debit Note button) to its source.
         const fields = [...baseFields];
-        for (const f of ['x_zatca_document_type', 'reversed_entry_id', 'ref', 'invoice_origin']) {
+        for (const f of ['x_zatca_document_type', 'reversed_entry_id', 'debit_origin_id', 'ref', 'invoice_origin']) {
             if (fieldsMeta && fieldsMeta[f]) {
                 fields.push(f);
             }
@@ -505,14 +507,18 @@ export class OdooClient {
         const isB2B = !!buyer.vat;
         const type = isB2B ? 'standard' : 'simplified';
         
-        // Determine document type (388 = Invoice, 381 = Credit Note, 383 = Debit Note)
+        // Determine document type (388 = Invoice, 381 = Credit Note, 383 = Debit Note).
+        // Priority: explicit override → credit note (out_refund) → debit note
+        // (out_invoice with debit_origin_id, Odoo's native link) → ref-text heuristic → invoice.
         let documentType = '388';
         const refLower = (move.ref || '').toLowerCase();
-        
+
         if (move.x_zatca_document_type) {
             documentType = move.x_zatca_document_type;
         } else if (move.move_type === 'out_refund') {
             documentType = '381';
+        } else if (move.debit_origin_id && move.debit_origin_id[0]) {
+            documentType = '383';
         } else if (refLower.includes('debit note') || refLower.includes('debit of')) {
             documentType = '383';
         } else {
@@ -521,11 +527,14 @@ export class OdooClient {
 
         const isAdjustment = documentType === '381' || documentType === '383';
 
-        // Extract original invoice ID for adjustment references
+        // Extract original invoice ID for adjustment references (ZATCA requires a
+        // BillingReference to the original invoice for 381/383).
         let originalInvoiceId = '';
         if (isAdjustment) {
             if (move.reversed_entry_id && move.reversed_entry_id[1]) {
                 originalInvoiceId = move.reversed_entry_id[1];
+            } else if (move.debit_origin_id && move.debit_origin_id[1]) {
+                originalInvoiceId = move.debit_origin_id[1];
             } else if (move.ref) {
                 // Remove prefixes like "Reversal of:", "Debit Note of:", or "Debit of:"
                 const cleanRef = move.ref
