@@ -54,8 +54,14 @@ export class OdooClient {
 
             const json = await res.json();
             if (json.error) {
-                console.error('[Odoo JSON-RPC Error]:', json.error);
-                throw new Error(json.error.message || 'Odoo RPC Error');
+                console.error('[Odoo JSON-RPC Error]:', JSON.stringify(json.error));
+                // Odoo wraps the real cause in error.data — `message` is just a generic
+                // "Odoo Server Error". Surface the specific exception name + message so
+                // callers (and the onboarding banner) get something actionable.
+                const d = json.error.data || {};
+                const detail = [d.name, d.message].filter(Boolean).join(': ');
+                const base = json.error.message || 'Odoo RPC Error';
+                throw new Error(detail ? `${base} — ${detail}` : base);
             }
 
             return json.result;
