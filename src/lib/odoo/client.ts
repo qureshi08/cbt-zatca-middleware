@@ -123,28 +123,64 @@ export class OdooClient {
         }
     }
 
+    /** The database name actually in use — may differ from the input after self-heal. */
+    get currentDb(): string {
+        return this.db;
+    }
+
+    /** For Odoo Online (*.odoo.com) the database name equals the subdomain (case-sensitive). */
+    private odooOnlineDb(): string | null {
+        try {
+            const host = new URL(this.url).hostname;
+            if (host.endsWith('.odoo.com')) {
+                const sub = host.split('.')[0];
+                return sub || null;
+            }
+        } catch { /* not a parseable URL — ignore */ }
+        return null;
+    }
+
     /**
      * Authenticates with Odoo and retrieves the User ID.
+     *
+     * Self-heals the most common Odoo Online mistake: a database name that doesn't
+     * match the subdomain exactly (it's case-sensitive — "Convergentbt" vs
+     * "convergentbt"). On a "database does not exist" error we retry once with the
+     * subdomain-derived name and adopt it for the rest of the session.
      */
     async authenticate(): Promise<number> {
         if (!this.password) {
             throw new Error('Odoo password or API key is required for authentication');
         }
-        
-        console.log(`[Odoo] Authenticating user ${this.username} on database ${this.db}...`);
-        const uid = await this.request('common', 'authenticate', [
-            this.db,
-            this.username,
-            this.password,
-            {}, // Empty environment info dict
-        ]);
 
-        if (!uid || typeof uid !== 'number') {
-            throw new Error('Authentication failed: Invalid credentials or database name.');
+        const tryAuth = async (db: string): Promise<number> => {
+            console.log(`[Odoo] Authenticating user ${this.username} on database ${db}...`);
+            const uid = await this.request('common', 'authenticate', [
+                db,
+                this.username,
+                this.password,
+                {}, // Empty environment info dict
+            ]);
+            if (!uid || typeof uid !== 'number') {
+                throw new Error('Authentication failed: Invalid credentials or database name.');
+            }
+            return uid;
+        };
+
+        try {
+            this.userId = await tryAuth(this.db);
+        } catch (e: any) {
+            const online = this.odooOnlineDb();
+            if (online && online !== this.db && /does not exist/i.test(e.message || '')) {
+                console.warn(`[Odoo] Database "${this.db}" not found — retrying with subdomain database "${online}".`);
+                this.db = online;
+                this.userId = await tryAuth(online);
+            } else {
+                throw e;
+            }
         }
 
-        this.userId = uid;
-        return uid;
+        return this.userId;
     }
 
     /**

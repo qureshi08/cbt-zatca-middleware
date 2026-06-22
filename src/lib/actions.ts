@@ -132,7 +132,7 @@ export async function saveOdooConnection(fd: FormData) {
     {
       organization_id: org.id,
       odoo_url: url,
-      odoo_db: db,
+      odoo_db: odoo.currentDb, // may be self-corrected (e.g. subdomain casing) during the test
       odoo_username: username,
       odoo_password: encryptSecret(password) ?? "",
       status: test.success ? "connected" : "disconnected",
@@ -207,6 +207,15 @@ export async function provisionOdooAutomation() {
       msg = ok
         ? result.steps.join(" ")
         : [...result.steps, ...result.errors].join(" — ");
+
+      // Persist any self-corrected DB name + a fresh, truthful connection stamp.
+      if (ok) {
+        await supabaseAdmin.from("odoo_config").update({
+          odoo_db: odoo.currentDb,
+          status: "connected",
+          last_sync: new Date().toISOString(),
+        }).eq("organization_id", org.id);
+      }
     }
   } catch (e) {
     ok = false;
