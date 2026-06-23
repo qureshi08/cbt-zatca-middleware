@@ -16,7 +16,8 @@ const NAV = [
 
 export default function Sidebar({ email, isAdmin }: { email?: string; isAdmin?: boolean }) {
   const path = usePathname();
-  const nav = isAdmin ? [...NAV, { href: "/admin", label: "Admin · Support" }] : NAV;
+  // Support staff get a focused console nav, not the customer onboarding links.
+  const nav = isAdmin ? [{ href: "/admin", label: "Admin · Support" }] : NAV;
 
   return (
     <aside style={{ width: 240, flexShrink: 0, background: "#0f2233", color: "#cdd8e3", minHeight: "100vh", display: "flex", flexDirection: "column" }}>

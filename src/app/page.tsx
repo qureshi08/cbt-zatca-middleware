@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { getOnboardingState } from "@/lib/org";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isPlatformAdmin } from "@/lib/admin";
 import SignOutButton from "@/components/SignOutButton";
 
 const card: React.CSSProperties = { background: "#fff", border: "1px solid #e3e8ef", borderRadius: 10, padding: "16px 18px" };
@@ -19,6 +21,8 @@ function Check({ ok, children }: { ok: boolean; children: React.ReactNode }) {
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
+  // Support staff aren't a customer tenant — send them straight to the console.
+  if (isPlatformAdmin(user?.email)) redirect("/admin");
   const state = await getOnboardingState();
 
   type Inv = { id: string; invoice_number: string; invoice_type: string; zatca_status: string | null; total_amount: number | null; created_at: string };

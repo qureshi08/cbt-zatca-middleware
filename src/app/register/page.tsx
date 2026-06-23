@@ -20,7 +20,7 @@ function GoogleIcon() {
 function RegisterInner() {
   const router = useRouter();
   const sp = useSearchParams();
-  const next = sp.get("next") || "/onboarding";
+  const next = sp.get("next") || "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");

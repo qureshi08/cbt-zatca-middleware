@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ensureTenant } from "@/lib/tenant";
+import { isPlatformAdmin } from "@/lib/admin";
 
 /**
  * OAuth callback: exchange the auth code for a session, ensure the user has a
@@ -17,12 +18,16 @@ export async function GET(req: NextRequest) {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error && data.user) {
-      try {
-        await ensureTenant(data.user.id, data.user.email ?? "");
-      } catch (e) {
-        console.error("tenant bootstrap failed:", e);
+      // Support staff aren't a customer tenant — don't create a junk org for them.
+      if (!isPlatformAdmin(data.user.email)) {
+        try {
+          await ensureTenant(data.user.id, data.user.email ?? "");
+        } catch (e) {
+          console.error("tenant bootstrap failed:", e);
+        }
       }
     }
   }
+  // For OAuth login `next` is "/", and the dashboard sends admins on to /admin.
   return NextResponse.redirect(`${origin}${next}`);
 }
