@@ -29,7 +29,7 @@ import { processZATCATransaction } from './transactions';
 async function getSellerForOrganization(orgId: string): Promise<SellerParty> {
     const { data: org, error } = await supabaseAdmin
         .from('organizations')
-        .select('name, tax_number, vat_number')
+        .select('name, tax_number, vat_number, addr_building, addr_street, addr_district, addr_city, addr_postal, addr_country')
         .eq('id', orgId)
         .maybeSingle();
 
@@ -43,14 +43,15 @@ async function getSellerForOrganization(orgId: string): Promise<SellerParty> {
     return {
         partyIdentification: { id: org.tax_number, schemeID: 'CRN' },
         postalAddress: {
-            // TODO(QB-CUSTOMER-ADDRESS): collect during registration / onboarding.
-            // Sandbox-safe placeholders so the XML validates structurally.
-            streetName: 'Registered Address',
-            buildingNumber: '0000',
-            citySubdivisionName: 'Riyadh',
-            cityName: 'Riyadh',
-            postalZone: '11564',
-            country: 'SA',
+            // Real registered address from the Business Profile. Placeholders only
+            // as a last resort so Demo XML still validates structurally; for real
+            // (core) filing the go-live flow requires a complete profile.
+            streetName: org.addr_street || 'Registered Address',
+            buildingNumber: org.addr_building || '0000',
+            citySubdivisionName: org.addr_district || org.addr_city || 'Riyadh',
+            cityName: org.addr_city || 'Riyadh',
+            postalZone: org.addr_postal || '11564',
+            country: org.addr_country || 'SA',
         },
         partyTaxScheme: { companyID: org.vat_number },
         partyLegalEntity: { registrationName: org.name },

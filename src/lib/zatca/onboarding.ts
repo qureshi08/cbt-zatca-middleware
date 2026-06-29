@@ -19,6 +19,30 @@ import {
     logToTrace
 } from './api/client';
 import { getOnboardingStatus, saveOnboardingStatus, OnboardingStatus } from './onboarding-storage';
+import { supabaseAdmin } from '../supabase';
+
+/** Build a real ZATCA CSR config from the tenant's registered identity (for core onboarding). */
+async function buildRealCsrConfig(orgId: string) {
+    const { data: org } = await supabaseAdmin
+        .from('organizations')
+        .select('name, vat_number, addr_city, addr_district, addr_country')
+        .eq('id', orgId)
+        .maybeSingle();
+    if (!org?.vat_number || !org?.name) {
+        throw new Error('Complete your Business Profile (legal name + VAT number) before going live.');
+    }
+    return {
+        commonName: String(org.name).slice(0, 64),
+        serialNumber: `1-ZATCAMW|2-Unified|3-${orgId}`,
+        organizationIdentifier: org.vat_number,
+        organizationUnitName: org.addr_district || 'Main Branch',
+        organizationName: org.name,
+        countryName: org.addr_country || 'SA',
+        invoiceType: '1100',
+        location: org.addr_city || 'Riyadh',
+        industry: 'General',
+    };
+}
 import { buildAndGenerateXML, updateInvoiceWithSignature, formatDate, formatTime } from './xml/builder';
 import { hashInvoiceForSubmission, generatePreviousInvoiceHash } from './crypto/hash';
 import { generateCompleteQRCode } from './qr/generator';
@@ -65,9 +89,8 @@ export async function startOnboarding(otp: string, orgId: string, env: 'demo' | 
             });
         } else {
             console.log(`[ZATCA-${orgId}] REAL onboarding against ZATCA core with the tenant's OTP`);
-            // TODO(H7): build the CSR from the tenant's real VAT/CR/name/address
-            // instead of TEST_CSR_CONFIG before this can pass ZATCA core.
-            const { pem } = generateCSR(TEST_CSR_CONFIG, privateKey);
+            const csrConfig = await buildRealCsrConfig(orgId);
+            const { pem } = generateCSR(csrConfig, privateKey);
             const b64OfPem = Buffer.from(pem.trim()).toString('base64');
             response = await requestComplianceCSID(b64OfPem, otp, 'real');
         }
