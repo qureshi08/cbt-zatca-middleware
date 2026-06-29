@@ -24,16 +24,17 @@ export async function processZATCATransaction(
     type: 'standard' | 'simplified',
     invoiceId: string,
     uuid: string,
-    orgId: string
+    orgId: string,
+    env: 'demo' | 'real' = 'demo'
 ): Promise<TransactionResult> {
-    const status = await getOnboardingStatus(orgId);
+    const status = await getOnboardingStatus(orgId, env);
 
     // We prefer Production CSID if available, fallback to Compliance CSID for testing
     const token = status.productionCSID || status.complianceCSID;
     const secret = status.productionSecret || status.complianceSecret;
 
-    // Simulation detection based on the Request ID prefix
-    const isSimulated = status.complianceRequestId?.startsWith('SIM-');
+    // Demo files against the local simulator; Real files against ZATCA core.
+    const isSimulated = env === 'demo';
 
     if (!token) {
         return {
@@ -65,9 +66,9 @@ export async function processZATCATransaction(
 
             let response;
             if (type === 'standard') {
-                response = await submitClearance(b64Xml, invoiceHash, uuid, token, secret || '');
+                response = await submitClearance(b64Xml, invoiceHash, uuid, token, secret || '', env);
             } else {
-                response = await submitReporting(b64Xml, invoiceHash, uuid, token, secret || '');
+                response = await submitReporting(b64Xml, invoiceHash, uuid, token, secret || '', env);
             }
 
             if (!response.success) {

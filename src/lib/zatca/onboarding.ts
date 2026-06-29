@@ -35,14 +35,15 @@ export async function getOrganizationsAction() {
 /**
  * Step 1: Start Onboarding for an Organization with an OTP
  */
-export async function startOnboarding(otp: string, orgId: string) {
+export async function startOnboarding(otp: string, orgId: string, env: 'demo' | 'real' = 'demo') {
     try {
         const { privateKey, publicKey } = generateKeyPair();
 
-        // Request Compliance CSID
+        // Request Compliance CSID. Demo = local sandbox (no ZATCA call); Real = the
+        // live ZATCA core endpoint with the tenant's real OTP.
         let response;
-        if (otp === '123456') {
-            console.log(`[ZATCA-${orgId}] Using Sandbox Simulation Mode (OTP 123456)`);
+        if (env === 'demo') {
+            console.log(`[ZATCA-${orgId}] Demo onboarding (local simulation)`);
             const dummyCert = 'MIICUjCCAdegAwIBAgIUL35Nbv/IbzjZUnhsbWlsecLbwjkwCgYIKoZIzj0EAwIwYzELMAkGA1UEBhMCU0ExJDAiBgNVBAoMG01heGltdW0gU3BlZWQgVGVjaCBTdXBwbHkgTFREMRYwFAYDVQQLDA1SaXlhZGggQnJhbmNoMRcwFQYDVQQDDA5UU1QtODg2NDMxMTQ1MB4XDTI0MDEwMTAwMDAwMFoXDTI2MDEwMTAwMDAwMFowYzELMAkGA1UEBhMCU0ExJDAiBgNVBAoMG01heGltdW0gU3BlZWQgVGVjaCBTdXBwbHkgTFREMRYwFAYDVQQLDA1SaXlhZGggQnJhbmNoMRcwFQYDVQQDDA5UU1QtODg2NDMxMTQ1MBkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEL9P6iXG+6oT7v9U2j9u8v7p/7zR/3y9u5iG2k1X2v8P6T0N3v8zX9Y7u4W8s5Y7I4R8C6z1yK2B6U9/4o2owczAJBgNVHRMEAjAAMAsGA1UdDwQEAwIHgDAKBggqhkjOPQQDAgNIADBFAiEA5YvCtzSjD5Zf6N8p5r8Wp8/7+g3+6Y7+p8v5r5+g3+6D/7zP9+y5T6Z6R7/T1v4+J2qwBf9zX9Y7u4W8s5Y7I4=';
             const simData = {
                 requestID: 'SIM-REQ-' + Date.now(),
@@ -63,10 +64,12 @@ export async function startOnboarding(otp: string, orgId: string) {
                 })
             });
         } else {
-            console.log(`[ZATCA-${orgId}] Requesting Compliance CSID with OTP: ${otp}`);
+            console.log(`[ZATCA-${orgId}] REAL onboarding against ZATCA core with the tenant's OTP`);
+            // TODO(H7): build the CSR from the tenant's real VAT/CR/name/address
+            // instead of TEST_CSR_CONFIG before this can pass ZATCA core.
             const { pem } = generateCSR(TEST_CSR_CONFIG, privateKey);
             const b64OfPem = Buffer.from(pem.trim()).toString('base64');
-            response = await requestComplianceCSID(b64OfPem, otp);
+            response = await requestComplianceCSID(b64OfPem, otp, 'real');
         }
 
         if (!response.success) throw new Error(response.error);
@@ -80,7 +83,7 @@ export async function startOnboarding(otp: string, orgId: string) {
             publicKey,
         };
 
-        await saveOnboardingStatus(orgId, status);
+        await saveOnboardingStatus(orgId, status, env);
         return { success: true, data: { requestID: response.data.requestID, binarySecurityToken: response.data.binarySecurityToken, secret: response.data.secret } };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -90,8 +93,8 @@ export async function startOnboarding(otp: string, orgId: string) {
 /**
  * Step 2: Run Compliance Checks for an Organization
  */
-export async function runComplianceChecks(orgId: string) {
-    const status = await getOnboardingStatus(orgId);
+export async function runComplianceChecks(orgId: string, env: 'demo' | 'real' = 'demo') {
+    const status = await getOnboardingStatus(orgId, env);
     // Accept multiple valid step names that indicate CSR was already obtained
     const validSteps = ['compliance_requested', 'csr_generated', 'compliance_failed'];
     if (!validSteps.includes(status.step || '') || !status.complianceCSID) {
@@ -156,12 +159,12 @@ export async function runComplianceChecks(orgId: string) {
             const b64Xml = Buffer.from(signedXml).toString('base64');
 
             let res;
-            if (status.complianceRequestId?.startsWith('SIM-')) {
+            if (env === 'demo') {
                 res = { success: true };
             } else {
-                // Use the actual secret returned from ZATCA during CSR step
-                const secret = status.complianceSecret || 'COM-SEC';
-                res = await performComplianceCheck(b64Xml, hash, invoice.uuid, status.complianceCSID!, secret);
+                // Use the actual secret returned from ZATCA during the CSR step.
+                const secret = status.complianceSecret || '';
+                res = await performComplianceCheck(b64Xml, hash, invoice.uuid, status.complianceCSID!, secret, 'real');
             }
 
             const hashHex = crypto.createHash('sha256').update(signedXml).digest('hex');
@@ -169,7 +172,7 @@ export async function runComplianceChecks(orgId: string) {
         }
 
         const allPassed = results.every(r => r.success);
-        await saveOnboardingStatus(orgId, { step: allPassed ? 'compliance_complete' : 'compliance_failed' });
+        await saveOnboardingStatus(orgId, { step: allPassed ? 'compliance_complete' : 'compliance_failed' }, env);
 
         return { success: allPassed, results };
     } catch (error: any) {
@@ -180,15 +183,15 @@ export async function runComplianceChecks(orgId: string) {
 /**
  * Step 3: Finalize and get Production CSID for an Organization
  */
-export async function finalizeOnboarding(orgId: string) {
-    const status = await getOnboardingStatus(orgId);
+export async function finalizeOnboarding(orgId: string, env: 'demo' | 'real' = 'demo') {
+    const status = await getOnboardingStatus(orgId, env);
     if (status.step !== 'compliance_complete') {
         return { success: false, error: 'Compliance checks not yet passed' };
     }
 
     try {
         let response;
-        if (status.complianceRequestId?.startsWith('SIM-')) {
+        if (env === 'demo') {
             response = {
                 success: true,
                 data: {
@@ -197,7 +200,7 @@ export async function finalizeOnboarding(orgId: string) {
                 }
             };
         } else {
-            response = await requestProductionCSID(status.complianceRequestId!, status.complianceCSID!, 'COM-SEC');
+            response = await requestProductionCSID(status.complianceRequestId!, status.complianceCSID!, status.complianceSecret || '', 'real');
         }
 
         if (!response.success) throw new Error(response.error);
@@ -207,7 +210,7 @@ export async function finalizeOnboarding(orgId: string) {
             productionCSID: response.data.binarySecurityToken,
             productionSecret: response.data.secret,
             isRegistered: true,
-        });
+        }, env);
 
         return { success: true, data: status };
     } catch (error: any) {
@@ -217,13 +220,13 @@ export async function finalizeOnboarding(orgId: string) {
 /**
  * Atomic Onboarding Wrapper (Convenience Shortcut for API)
  */
-export async function completeOnboarding(otp: string, orgId: string) {
+export async function completeOnboarding(otp: string, orgId: string, env: 'demo' | 'real' = 'demo') {
     try {
-        const s1 = await startOnboarding(otp, orgId);
+        const s1 = await startOnboarding(otp, orgId, env);
         if (!s1.success) return s1;
-        const s2 = await runComplianceChecks(orgId);
+        const s2 = await runComplianceChecks(orgId, env);
         if (!s2.success) return s2;
-        return await finalizeOnboarding(orgId);
+        return await finalizeOnboarding(orgId, env);
     } catch (e: any) {
         return { success: false, error: e.message };
     }

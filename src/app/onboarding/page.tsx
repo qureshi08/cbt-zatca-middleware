@@ -4,8 +4,9 @@ import { getOnboardingState } from "@/lib/org";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
   setIntegration, saveZohoConnection, saveOdooConnection, resetIntegration,
-  generateWebhookKey, runZatcaOnboarding, sendTestInvoice, provisionOdooAutomation,
+  generateWebhookKey, runZatcaOnboarding, sendTestInvoice, provisionOdooAutomation, runGoLive,
 } from "@/lib/actions";
+import { getActiveZatcaEnv } from "@/lib/zatca/actions";
 
 const card: React.CSSProperties = { background: "#fff", border: "1px solid #e3e8ef", borderRadius: 10, padding: "18px 20px", marginBottom: 14 };
 const label: React.CSSProperties = { display: "block", fontSize: 12, color: "#33414f", margin: "12px 0 3px", fontWeight: 600 };
@@ -24,7 +25,7 @@ const STEPS = ["Profile", "Integration", "Connect", "ZATCA"];
 // Odoo auto-provisioning (module install + several RPC round-trips) can run long.
 export const maxDuration = 60;
 
-export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ step?: string; newkey?: string; zerr?: string; cerr?: string; cwarn?: string; terr?: string; tok?: string; pok?: string; perr?: string }> }) {
+export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ step?: string; newkey?: string; zerr?: string; cerr?: string; cwarn?: string; terr?: string; tok?: string; pok?: string; perr?: string; golive_ok?: string; golive_err?: string }> }) {
   const sp = await searchParams;
   const state = await getOnboardingState();
   if (!state) return <div style={{ padding: 32 }}>Not authenticated.</div>;
@@ -35,6 +36,8 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   const proto = h.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
   const base = `${proto}://${host}`;
   const { org, profileComplete, integration, connected, zatcaOnboarded, nextStep } = state;
+  // Is this tenant LIVE (filing legally against ZATCA core) vs still in Demo?
+  const live = (await getActiveZatcaEnv(org.id)) === "real";
   const done = [profileComplete, !!integration, connected, zatcaOnboarded];
   const defaultStep = nextStep === "profile" ? 1 : nextStep === "integration" ? 2 : nextStep === "connect" ? 3 : 4;
   const selected = Math.min(4, Math.max(1, Number(sp.step) || defaultStep));
@@ -164,6 +167,8 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
           {sp.tok && <div style={banner("#e9f8ef", "#b6e4c6", "#1f9d57")}>✅ Test invoice: <b>{sp.tok}</b> — <Link href="/invoices">view it →</Link></div>}
           {sp.terr && <div style={banner("#fdeee9", "#f0c0b3", "#c0392b")}>❌ {sp.terr}</div>}
           {sp.zerr && <div style={banner("#fdeee9", "#f0c0b3", "#c0392b")}>❌ {sp.zerr}</div>}
+          {sp.golive_ok && <div style={banner("#e9f8ef", "#b6e4c6", "#1f9d57")}>🎉 You&apos;re live — invoices are now legally filed with ZATCA (core).</div>}
+          {sp.golive_err && <div style={banner("#fdeee9", "#f0c0b3", "#c0392b")}>❌ Go-live failed: {sp.golive_err}</div>}
 
           {!connected ? (
             <div style={banner("#fff6e0", "#f0d48a", "#8a5a00")}>Connect your accounting software (<Link href="/onboarding?step=3">step 3</Link>) before ZATCA onboarding.</div>
@@ -188,6 +193,38 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
               </form>
               <p style={hint}>Calls ZATCA simulation; takes a few seconds.</p>
             </div>
+          )}
+
+          {/* GO LIVE — deliberate Demo→Real switch, shown once Demo is set up */}
+          {connected && zatcaOnboarded && (
+            live ? (
+              <div style={{ ...card, background: "#f1faf4", borderColor: "#b6e4c6", marginTop: 14 }}>
+                <h3 style={{ margin: "0 0 6px", color: "#1f9d57" }}>🟢 Live with ZATCA</h3>
+                <p style={{ color: "#3a4a5a", fontSize: 13, margin: 0 }}>This business is onboarded on the <b>real ZATCA (core)</b> environment — invoices are <b>legally filed</b>. The Demo banner is gone.</p>
+              </div>
+            ) : (
+              <div style={{ ...card, border: "1px solid #f0d48a", background: "#fffdf6", marginTop: 14 }}>
+                <h3 style={{ margin: "0 0 6px", color: "#8a5a00" }}>🚀 Go live with ZATCA</h3>
+                <p style={{ color: "#6b5a2a", fontSize: 13, margin: "0 0 6px" }}>
+                  You&apos;re in <b>Demo</b> — invoices clear against ZATCA <b>simulation</b> and are <b>not legally filed</b>. When you&apos;re ready to file for real:
+                </p>
+                <ol style={{ ...ol, color: "#6b5a2a", margin: "0 0 12px" }}>
+                  <li style={{ margin: "5px 0" }}>Log in to the <a href="https://fatoora.zatca.gov.sa" target="_blank" rel="noreferrer">Fatoora portal</a> and generate a <b>real OTP</b> for this business&apos;s VAT.</li>
+                  <li style={{ margin: "5px 0" }}>Paste it below and run go-live — we re-onboard against ZATCA <b>core</b> and obtain real production credentials.</li>
+                </ol>
+                <div style={{ background: "#fdeee9", border: "1px solid #f0c0b3", color: "#c0392b", fontSize: 12, padding: "8px 11px", borderRadius: 7, marginBottom: 12 }}>
+                  ⚠️ After this, invoices are <b>legally filed with ZATCA</b> and cannot be un-filed. Make sure your business profile (VAT, CR, address) is correct first.
+                </div>
+                <form action={runGoLive}>
+                  <label style={label}>Real ZATCA OTP (from Fatoora portal)</label>
+                  <div style={{ display: "flex", gap: 10, maxWidth: 420 }}>
+                    <input style={input} name="otp" placeholder="Your real OTP — not 123456" required />
+                    <button type="submit" style={{ ...btn, background: "#1f9d57", whiteSpace: "nowrap" }}>Go live →</button>
+                  </div>
+                </form>
+                <p style={hint}>Requires ZATCA production access for your VAT. Takes a few seconds.</p>
+              </div>
+            )
           )}
         </div>
       )}

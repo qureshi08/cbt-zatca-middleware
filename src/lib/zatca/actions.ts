@@ -57,6 +57,16 @@ async function getSellerForOrganization(orgId: string): Promise<SellerParty> {
     };
 }
 
+/**
+ * A tenant's ACTIVE ZATCA environment: 'real' once they've completed real
+ * (core) onboarding and hold a production CSID there; otherwise 'demo'.
+ * Completing real onboarding IS the deliberate go-live action (FR-ENV-7).
+ */
+export async function getActiveZatcaEnv(orgId: string): Promise<'demo' | 'real'> {
+    const real = await getOnboardingStatus(orgId, 'real');
+    return real.isRegistered ? 'real' : 'demo';
+}
+
 export async function validateInvoiceAction(xml: string) {
     try {
         const result = await validateInvoiceCompliance(xml);
@@ -71,10 +81,13 @@ export async function validateInvoiceAction(xml: string) {
  */
 export async function generateInvoiceAction(input: SimpleInvoiceInput, orgId: string) {
     try {
-        // 1. Get stored onboarding info for this organization
-        const status = await getOnboardingStatus(orgId);
+        // 0. Resolve which ZATCA environment this tenant files against (demo|real).
+        const env = await getActiveZatcaEnv(orgId);
+
+        // 1. Get stored onboarding info for this organization (for that environment)
+        const status = await getOnboardingStatus(orgId, env);
         if (!status.privateKey || !(status.complianceCSID || status.productionCSID)) {
-            throw new Error('Bank system not registered on ZATCA. Please complete onboarding first.');
+            throw new Error('Not registered on ZATCA. Please complete onboarding first.');
         }
 
         const privateKey = status.privateKey;
@@ -132,13 +145,14 @@ export async function generateInvoiceAction(input: SimpleInvoiceInput, orgId: st
         // 8. Update XML with signature and QR
         const signedXML = updateInvoiceWithSignature(xml, signatureXML, tlvData);
 
-        // 9. Execute ZATCA Transaction (Clearance or Reporting)
+        // 9. Execute ZATCA Transaction (Clearance or Reporting) in the tenant's env
         const transResult = await processZATCATransaction(
             signedXML,
             input.type,
             invoice.id,
             invoice.uuid,
-            orgId
+            orgId,
+            env
         );
 
         if (!transResult.success) {

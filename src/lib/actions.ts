@@ -276,6 +276,30 @@ export async function runZatcaOnboarding(fd: FormData) {
 }
 
 /**
+ * GO LIVE — the deliberate Demo→Real switch (FR-ENV-7). Runs the full ZATCA
+ * onboarding against the LIVE `core` environment with the tenant's REAL OTP
+ * (from the Fatoora portal), obtaining real CSIDs stored in the 'real' profile.
+ * From then on, getActiveZatcaEnv returns 'real' and invoices are legally filed.
+ */
+export async function runGoLive(fd: FormData) {
+  const org = await requireOrg();
+  const otp = field(fd, "otp");
+  if (!otp) {
+    redirect(`/onboarding?step=4&golive_err=${encodeURIComponent("Enter your real ZATCA OTP from the Fatoora portal.")}`);
+  }
+  let err: string | null = null;
+  try {
+    const res = await completeOnboarding(otp, org.id, "real");
+    if (!res?.success) err = (res as { error?: string })?.error || "Go-live onboarding failed";
+  } catch (e) {
+    err = e instanceof Error ? e.message : "Go-live onboarding failed";
+  }
+  revalidatePath("/onboarding");
+  revalidatePath("/");
+  redirect(err ? `/onboarding?step=4&golive_err=${encodeURIComponent(err)}` : "/onboarding?step=4&golive_ok=1");
+}
+
+/**
  * Send a sample simplified invoice through the REAL pipeline (sign + submit to
  * ZATCA simulation) — lets the user verify clearance without needing the ERP
  * trigger wired. Persists to the invoices ledger like the webhook does.

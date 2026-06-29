@@ -6,17 +6,12 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { zatcaBaseUrl, type ZatcaEnv } from '../environments';
 
-// ZATCA Gateway Selection
-// 123456 is the universal simulator OTP used in ZATCA documentation
-const getBaseUrl = (otpOrToken?: string) => {
-    // If the identifier starts with '123456' it's simulation mode
-    // We also check for 'SIM-' prefix which we might inject for state tracking
-    if (otpOrToken === '123456' || otpOrToken?.startsWith('MC-')) {
-        return 'https://gw-fatoora.zatca.gov.sa/e-invoicing/simulation';
-    }
-    return 'https://gw-fatoora.zatca.gov.sa/e-invoicing/developer-portal';
-};
+// ZATCA Gateway Selection — driven by the tenant's environment, NOT a guess:
+//   demo → simulation (OTP 123456, not legally filed)
+//   real → core       (real OTP, legally filed)
+const getBaseUrl = (env: ZatcaEnv = 'demo') => zatcaBaseUrl(env);
 
 const LOG_FILE = path.join(process.cwd(), 'zatca-api-logs.json');
 
@@ -50,8 +45,8 @@ interface ZATCAResponse<T = any> {
 /**
  * Step 1: Request Compliance CSID
  */
-export async function requestComplianceCSID(b64CSR: string, otp: string): Promise<ZATCAResponse> {
-    const baseUrl = getBaseUrl(otp);
+export async function requestComplianceCSID(b64CSR: string, otp: string, env: ZatcaEnv = 'demo'): Promise<ZATCAResponse> {
+    const baseUrl = getBaseUrl(env);
     const endpoint = `${baseUrl}/compliance`;
     const headers = {
         'accept': 'application/json',
@@ -91,9 +86,10 @@ export async function performComplianceCheck(
     invoiceHash: string,
     uuid: string,
     token: string,
-    secret: string
+    secret: string,
+    env: ZatcaEnv = 'demo'
 ): Promise<ZATCAResponse> {
-    const baseUrl = getBaseUrl(token); // Simulation tokens often have specific formats or we default to portal
+    const baseUrl = getBaseUrl(env);
     const auth = Buffer.from(`${token}:${secret}`).toString('base64');
     const endpoint = `${baseUrl}/compliance/invoices`;
     const headers = {
@@ -141,9 +137,10 @@ export async function performComplianceCheck(
 export async function requestProductionCSID(
     complianceRequestID: string,
     token: string,
-    secret: string
+    secret: string,
+    env: ZatcaEnv = 'demo'
 ): Promise<ZATCAResponse> {
-    const baseUrl = getBaseUrl(token);
+    const baseUrl = getBaseUrl(env);
     const auth = Buffer.from(`${token}:${secret}`).toString('base64');
     const response = await fetch(`${baseUrl}/production/csids`, {
         method: 'POST',
@@ -168,8 +165,8 @@ export async function requestProductionCSID(
 /**
  * Step 4/5: Submission Gateways
  */
-export async function submitClearance(b64Xml: string, invoiceHash: string, uuid: string, token: string, secret: string): Promise<ZATCAResponse> {
-    const baseUrl = getBaseUrl(token);
+export async function submitClearance(b64Xml: string, invoiceHash: string, uuid: string, token: string, secret: string, env: ZatcaEnv = 'demo'): Promise<ZATCAResponse> {
+    const baseUrl = getBaseUrl(env);
     const auth = Buffer.from(`${token}:${secret}`).toString('base64');
     const response = await fetch(`${baseUrl}/invoices/clearance/single`, {
         method: 'POST',
@@ -187,8 +184,8 @@ export async function submitClearance(b64Xml: string, invoiceHash: string, uuid:
     return response.ok ? { success: true, data: JSON.parse(rawText) } : { success: false, error: rawText };
 }
 
-export async function submitReporting(b64Xml: string, invoiceHash: string, uuid: string, token: string, secret: string): Promise<ZATCAResponse> {
-    const baseUrl = getBaseUrl(token);
+export async function submitReporting(b64Xml: string, invoiceHash: string, uuid: string, token: string, secret: string, env: ZatcaEnv = 'demo'): Promise<ZATCAResponse> {
+    const baseUrl = getBaseUrl(env);
     const auth = Buffer.from(`${token}:${secret}`).toString('base64');
     const response = await fetch(`${baseUrl}/invoices/reporting/single`, {
         method: 'POST',

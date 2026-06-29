@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import { getOnboardingState } from "@/lib/org";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isPlatformAdmin } from "@/lib/admin";
+import { getActiveZatcaEnv } from "@/lib/zatca/actions";
 import SignOutButton from "@/components/SignOutButton";
 
 const card: React.CSSProperties = { background: "#fff", border: "1px solid #e3e8ef", borderRadius: 10, padding: "16px 18px" };
@@ -36,6 +37,7 @@ export default async function DashboardPage() {
       .limit(100);
     rows = (data ?? []) as Inv[];
   }
+  const live = state?.org ? (await getActiveZatcaEnv(state.org.id)) === "real" : false;
   const up = (s: string | null) => (s || "").toUpperCase();
   const cleared = rows.filter((i) => up(i.zatca_status) === "CLEARED").length;
   const reported = rows.filter((i) => up(i.zatca_status) === "REPORTED").length;
@@ -56,16 +58,24 @@ export default async function DashboardPage() {
     <div style={{ padding: "28px 32px", maxWidth: 1000 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <h1 style={{ color: "#155a93", fontSize: 22, margin: 0, flex: 1 }}>Dashboard</h1>
-        <span style={{ fontSize: 11, padding: "3px 9px", borderRadius: 20, background: "#fff6e0", color: "#8a5a00", border: "1px solid #f0d48a", fontWeight: 600 }}>● Demo mode</span>
+        {live
+          ? <span style={{ fontSize: 11, padding: "3px 9px", borderRadius: 20, background: "#e9f8ef", color: "#1f7a45", border: "1px solid #b6e4c6", fontWeight: 600 }}>● Live · ZATCA</span>
+          : <span style={{ fontSize: 11, padding: "3px 9px", borderRadius: 20, background: "#fff6e0", color: "#8a5a00", border: "1px solid #f0d48a", fontWeight: 600 }}>● Demo mode</span>}
         <SignOutButton />
       </div>
       <p style={{ color: "#6b7785", fontSize: 13, marginTop: 4 }}>
         Signed in as <strong>{user?.email}</strong>{state?.org?.name ? ` · ${state.org.name}` : ""}{state?.integration ? ` · ${state.integration}` : ""}
       </p>
 
-      <div style={{ background: "#fff6e0", border: "1px solid #f0d48a", color: "#8a5a00", padding: "10px 14px", borderRadius: 8, fontSize: 13, margin: "16px 0" }}>
-        ⚠️ <strong>Demo mode</strong> — invoices go to ZATCA simulation and are <strong>not legally filed</strong>.
-      </div>
+      {live ? (
+        <div style={{ background: "#e9f8ef", border: "1px solid #b6e4c6", color: "#1f7a45", padding: "10px 14px", borderRadius: 8, fontSize: 13, margin: "16px 0" }}>
+          🟢 <strong>Live</strong> — invoices are legally filed with ZATCA (core).
+        </div>
+      ) : (
+        <div style={{ background: "#fff6e0", border: "1px solid #f0d48a", color: "#8a5a00", padding: "10px 14px", borderRadius: 8, fontSize: 13, margin: "16px 0" }}>
+          ⚠️ <strong>Demo mode</strong> — invoices go to ZATCA simulation and are <strong>not legally filed</strong>. Switch to live in <Link href="/onboarding?step=4">onboarding</Link>.
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
         {kpis.map((k) => (

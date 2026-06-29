@@ -26,7 +26,7 @@ export interface OnboardingStatus {
  * Fetches the ZATCA onboarding status for a specific organization.
  * orgId is optional for backward compat (layout.tsx calls it with no args — now a no-op).
  */
-export async function getOnboardingStatus(orgId?: string): Promise<OnboardingStatus> {
+export async function getOnboardingStatus(orgId?: string, env: 'demo' | 'real' = 'demo'): Promise<OnboardingStatus> {
     if (!orgId) return { isRegistered: false, step: 'none' };
 
     try {
@@ -34,7 +34,8 @@ export async function getOnboardingStatus(orgId?: string): Promise<OnboardingSta
             .from('zatca_profiles')
             .select('*')
             .eq('organization_id', orgId)
-            .single();
+            .eq('environment', env)
+            .maybeSingle();
 
         if (error || !data) {
             return { isRegistered: false, step: 'none' };
@@ -61,9 +62,10 @@ export async function getOnboardingStatus(orgId?: string): Promise<OnboardingSta
  * Saves or updates the ZATCA onboarding status for an organization.
  * Only fields that are explicitly provided will be written — undefined fields are ignored.
  */
-export async function saveOnboardingStatus(orgId: string, status: Partial<OnboardingStatus>): Promise<void> {
+export async function saveOnboardingStatus(orgId: string, status: Partial<OnboardingStatus>, env: 'demo' | 'real' = 'demo'): Promise<void> {
     const updateData: Record<string, any> = {
         organization_id: orgId,
+        environment: env,
         updated_at: new Date().toISOString(),
     };
 
@@ -82,13 +84,15 @@ export async function saveOnboardingStatus(orgId: string, status: Partial<Onboar
         .from('zatca_profiles')
         .select('id')
         .eq('organization_id', orgId)
-        .single();
+        .eq('environment', env)
+        .maybeSingle();
 
     if (existing) {
         const { error } = await supabaseAdmin
             .from('zatca_profiles')
             .update(updateData)
-            .eq('organization_id', orgId);
+            .eq('organization_id', orgId)
+            .eq('environment', env);
         if (error) throw new Error(`Failed to update status: ${error.message}`);
     } else {
         const { error } = await supabaseAdmin
@@ -101,10 +105,11 @@ export async function saveOnboardingStatus(orgId: string, status: Partial<Onboar
 /**
  * Resets the ZATCA profile for an organization (used for re-onboarding).
  */
-export async function resetOnboardingStatus(orgId: string): Promise<void> {
+export async function resetOnboardingStatus(orgId: string, env: 'demo' | 'real' = 'demo'): Promise<void> {
     const { error } = await supabaseAdmin
         .from('zatca_profiles')
         .delete()
-        .eq('organization_id', orgId);
+        .eq('organization_id', orgId)
+        .eq('environment', env);
     if (error) throw new Error(`Failed to reset onboarding status: ${error.message}`);
 }
