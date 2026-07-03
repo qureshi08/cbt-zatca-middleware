@@ -29,7 +29,7 @@ export async function sendEmail(to: string | string[], subject: string, html: st
 }
 
 /** All member email addresses for a tenant (its logged-in users). */
-async function orgEmails(orgId: string): Promise<string[]> {
+export async function orgEmails(orgId: string): Promise<string[]> {
   const { data: members } = await supabaseAdmin.from("tenant_members").select("user_id").eq("organization_id", orgId);
   const emails: string[] = [];
   for (const m of members ?? []) {

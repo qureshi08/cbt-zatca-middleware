@@ -38,6 +38,20 @@ export default async function DashboardPage() {
     rows = (data ?? []) as Inv[];
   }
   const live = state?.org ? (await getActiveZatcaEnv(state.org.id)) === "real" : false;
+
+  // Certificate-expiry warning (FR-ONB-7): warn when the active CSID is within 30 days of expiry.
+  let certDaysLeft: number | null = null;
+  if (state?.org) {
+    const { data: prof } = await supabaseAdmin
+      .from("zatca_profiles")
+      .select("csid_expires_at")
+      .eq("organization_id", state.org.id)
+      .eq("environment", live ? "real" : "demo")
+      .maybeSingle();
+    if (prof?.csid_expires_at) certDaysLeft = Math.ceil((new Date(prof.csid_expires_at).getTime() - Date.now()) / 86400000);
+  }
+  const certExpiring = certDaysLeft !== null && certDaysLeft <= 30;
+
   const up = (s: string | null) => (s || "").toUpperCase();
   const cleared = rows.filter((i) => up(i.zatca_status) === "CLEARED").length;
   const reported = rows.filter((i) => up(i.zatca_status) === "REPORTED").length;
@@ -67,6 +81,13 @@ export default async function DashboardPage() {
         Signed in as <strong>{user?.email}</strong>{state?.org?.name ? ` · ${state.org.name}` : ""}{state?.integration ? ` · ${state.integration}` : ""}
       </p>
 
+      {certExpiring && (
+        <div style={{ background: certDaysLeft !== null && certDaysLeft <= 0 ? "#fdeee9" : "#fff6e0", border: `1px solid ${certDaysLeft !== null && certDaysLeft <= 0 ? "#f0c0b3" : "#f0d48a"}`, color: certDaysLeft !== null && certDaysLeft <= 0 ? "#c0392b" : "#8a5a00", padding: "10px 14px", borderRadius: 8, fontSize: 13, margin: "16px 0" }}>
+          {certDaysLeft !== null && certDaysLeft <= 0
+            ? <>🔴 <strong>Your ZATCA certificate has expired</strong> — invoicing will fail until you renew. <Link href="/onboarding?step=4">Re-onboard →</Link></>
+            : <>⏳ <strong>Your ZATCA certificate expires in {certDaysLeft} day{certDaysLeft === 1 ? "" : "s"}</strong> — renew soon to avoid interruption. <Link href="/onboarding?step=4">Renew →</Link></>}
+        </div>
+      )}
       {live ? (
         <div style={{ background: "#e9f8ef", border: "1px solid #b6e4c6", color: "#1f7a45", padding: "10px 14px", borderRadius: 8, fontSize: 13, margin: "16px 0" }}>
           🟢 <strong>Live</strong> — invoices are legally filed with ZATCA (core).

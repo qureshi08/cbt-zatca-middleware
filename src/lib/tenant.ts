@@ -21,6 +21,23 @@ export async function ensureTenant(userId: string, email: string): Promise<strin
 
   if (existing.data?.organization_id) return existing.data.organization_id;
 
+  // If this email was invited to a team, join that org instead of creating one.
+  // Tolerant: if the invitations table isn't present yet, fall through.
+  try {
+    const { data: invite } = await supabaseAdmin
+      .from("invitations")
+      .select("id, organization_id")
+      .ilike("email", email)
+      .eq("status", "pending")
+      .limit(1)
+      .maybeSingle();
+    if (invite?.organization_id) {
+      await supabaseAdmin.from("tenant_members").insert({ organization_id: invite.organization_id, user_id: userId });
+      await supabaseAdmin.from("invitations").update({ status: "accepted" }).eq("id", invite.id);
+      return invite.organization_id;
+    }
+  } catch { /* invitations table not present — create a personal org below */ }
+
   const orgName = (email?.split("@")[0] || "My business").trim();
   const { data: org, error: orgErr } = await supabaseAdmin
     .from("organizations")

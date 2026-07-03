@@ -21,6 +21,20 @@ import {
 import { getOnboardingStatus, saveOnboardingStatus, OnboardingStatus } from './onboarding-storage';
 import { supabaseAdmin } from '../supabase';
 
+/** Best-effort parse of a production CSID's certificate expiry (X.509 notAfter). */
+function certExpiryISO(csidB64?: string): string | null {
+    if (!csidB64 || csidB64.startsWith('PROD-CSID-')) return null; // demo/fake token
+    try {
+        let pem = csidB64;
+        if (!pem.includes('BEGIN CERTIFICATE')) {
+            const decoded = Buffer.from(csidB64, 'base64').toString('utf8');
+            pem = decoded.includes('BEGIN CERTIFICATE') ? decoded : `-----BEGIN CERTIFICATE-----\n${csidB64}\n-----END CERTIFICATE-----`;
+        }
+        const cert = new crypto.X509Certificate(pem);
+        return new Date(cert.validTo).toISOString();
+    } catch { return null; }
+}
+
 /** Build a real ZATCA CSR config from the tenant's registered identity (for core onboarding). */
 async function buildRealCsrConfig(orgId: string) {
     const { data: org } = await supabaseAdmin
@@ -234,6 +248,15 @@ export async function finalizeOnboarding(orgId: string, env: 'demo' | 'real' = '
             productionSecret: response.data.secret,
             isRegistered: true,
         }, env);
+
+        // Record the certificate expiry so we can warn before it lapses (FR-ONB-7).
+        const expiry = certExpiryISO(response.data.binarySecurityToken);
+        if (expiry) {
+            await supabaseAdmin.from('zatca_profiles')
+                .update({ csid_expires_at: expiry })
+                .eq('organization_id', orgId)
+                .eq('environment', env);
+        }
 
         return { success: true, data: status };
     } catch (error: any) {

@@ -8,7 +8,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getActiveOrg } from "@/lib/org";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { isPlatformAdmin } from "@/lib/admin";
-import { notifyInvoiceFailure } from "@/lib/notify";
+import { notifyInvoiceFailure, sendEmail } from "@/lib/notify";
 import { encryptSecret, decryptSecret } from "@/lib/secrets";
 import { completeOnboarding } from "@/lib/zatca/onboarding";
 import { generateInvoiceAction } from "@/lib/zatca/actions";
@@ -289,6 +289,52 @@ export async function resubmitInvoice(fd: FormData) {
   await notifyInvoiceFailure(org.id, inv.invoice_number, res.error);
   revalidatePath(`/invoices/${inv.id}`);
   redirect(`/invoices/${inv.id}?retry=fail&msg=${encodeURIComponent(res.error || "Still failing")}`);
+}
+
+/** Invite a colleague (by email) to this business's account. */
+export async function inviteTeamMember(fd: FormData) {
+  const org = await requireOrg();
+  const user = await getCurrentUser();
+  const email = field(fd, "email").toLowerCase();
+  if (!email || !email.includes("@")) redirect(`/team?err=${encodeURIComponent("Enter a valid email address.")}`);
+
+  const { error } = await supabaseAdmin.from("invitations").insert({
+    organization_id: org.id,
+    email,
+    invited_by: user?.email ?? null,
+    status: "pending",
+  });
+  if (error) {
+    const msg = error.message.includes("invitations") ? "Team isn’t set up yet — run supabase_team_and_notify.sql." : error.message;
+    redirect(`/team?err=${encodeURIComponent(msg)}`);
+  }
+
+  const h = await headers();
+  const host = h.get("x-forwarded-host") || h.get("host") || "localhost:3000";
+  const proto = h.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
+  const base = `${proto}://${host}`;
+  await sendEmail(
+    email,
+    `You've been invited to ${org.name} on ZATCA Middleware`,
+    `<div style="font-family:Arial,sans-serif;color:#374151;max-width:520px">
+       <h2 style="color:#007A3D">You're invited to ${org.name}</h2>
+       <p>${user?.email || "A teammate"} invited you to join their ZATCA Middleware account.</p>
+       <p><a href="${base}/register" style="background:#00994D;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Create your account</a></p>
+       <p style="color:#6B7280;font-size:12px">Sign up with <b>${email}</b> and you'll join ${org.name} automatically.</p>
+     </div>`,
+  );
+
+  revalidatePath("/team");
+  redirect("/team?sent=1");
+}
+
+/** Revoke a pending invitation. */
+export async function revokeInvite(fd: FormData) {
+  const org = await requireOrg();
+  const id = field(fd, "id");
+  if (id) await supabaseAdmin.from("invitations").update({ status: "revoked" }).eq("id", id).eq("organization_id", org.id);
+  revalidatePath("/team");
+  redirect("/team");
 }
 
 /** Let the user change their integration choice. */
