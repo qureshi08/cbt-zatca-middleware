@@ -3,9 +3,9 @@ import { headers } from "next/headers";
 import { getOnboardingState } from "@/lib/org";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
-  generateKeyForSettings, revokeApiKey, toggleAutoSubmit, retestConnection, provisionOdooAutomation,
+  generateKeyForSettings, revokeApiKey, toggleAutoSubmit, retestConnection, provisionOdooAutomation, saveNotifyUrl,
 } from "@/lib/actions";
-import { card, hint, btn, ghostBtn as ghost, grayBtn as gray, copybox, banner } from "@/lib/ui";
+import { card, hint, btn, ghostBtn as ghost, grayBtn as gray, copybox, banner, label, input } from "@/lib/ui";
 
 const danger: React.CSSProperties = { ...btn, background: "#fff", color: "#c0392b", border: "1px solid #e3b4ab", padding: "5px 12px", fontSize: 12 };
 const pill = (bg: string, fg: string): React.CSSProperties => ({ background: bg, color: fg, fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: 0.3 });
@@ -35,6 +35,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   }
   const autoSubmit = odoo?.auto_submit ?? zoho?.auto_submit ?? true;
   const lastSync = odoo?.last_sync ?? zoho?.last_sync ?? null;
+
+  const { data: orgRow } = await supabaseAdmin.from("organizations").select("notify_url").eq("id", org.id).maybeSingle();
+  const notifyUrl = (orgRow as { notify_url?: string } | null)?.notify_url ?? "";
 
   // Integration keys
   const { data: keys } = await supabaseAdmin
@@ -150,6 +153,19 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       </div>
 
       {/* ENVIRONMENT */}
+      <div style={card}>
+        <h3 style={{ margin: "0 0 6px" }}>Status notifications <span style={{ fontWeight: 400, color: "#8a97a6", fontSize: 12 }}>(webhook)</span></h3>
+        <p style={{ ...hint, margin: "0 0 8px" }}>Optional. We&apos;ll POST a JSON message to this URL whenever an invoice clears or fails, so your own system is notified in real time (instead of polling).</p>
+        <form action={saveNotifyUrl} style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 280 }}>
+            <label style={label}>Callback URL</label>
+            <input style={input} name="notify_url" type="url" defaultValue={notifyUrl} placeholder="https://your-system.com/zatca-callback" />
+          </div>
+          <button type="submit" style={btn}>Save</button>
+        </form>
+        <p style={{ ...hint, marginTop: 8 }}>Payload: <code>{`{ event, invoiceId, success, zatcaStatus, uuid, error, timestamp }`}</code>.</p>
+      </div>
+
       <div style={card}>
         <h3 style={{ margin: "0 0 6px" }}>Environment</h3>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

@@ -291,6 +291,18 @@ export async function resubmitInvoice(fd: FormData) {
   redirect(`/invoices/${inv.id}?retry=fail&msg=${encodeURIComponent(res.error || "Still failing")}`);
 }
 
+/** Save (or clear) the outbound-webhook callback URL for this tenant. */
+export async function saveNotifyUrl(fd: FormData) {
+  const org = await requireOrg();
+  const url = field(fd, "notify_url");
+  if (url && !/^https?:\/\//i.test(url)) {
+    redirect(`/settings?err=${encodeURIComponent("Callback URL must start with http:// or https://")}`);
+  }
+  await supabaseAdmin.from("organizations").update({ notify_url: url || null }).eq("id", org.id);
+  revalidatePath("/settings");
+  redirect(`/settings?msg=${encodeURIComponent(url ? "Callback URL saved" : "Callback URL removed")}`);
+}
+
 /** Invite a colleague (by email) to this business's account. */
 export async function inviteTeamMember(fd: FormData) {
   const org = await requireOrg();

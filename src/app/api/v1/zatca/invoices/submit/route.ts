@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AuthService } from '@/lib/auth-service';
 import { generateInvoiceAction } from '@/lib/zatca/actions';
 import { priorFiled } from '@/lib/zatca/idempotency';
-import { notifyInvoiceFailure } from '@/lib/notify';
+import { notifyInvoiceFailure, notifyInvoiceCleared } from '@/lib/notify';
 import { supabaseAdmin } from '@/lib/supabase';
 
 /**
@@ -145,8 +145,9 @@ export async function POST(req: NextRequest) {
             }, { status: 422 });
         }
 
-        // 5. Return clean, transparent response to the Bank
+        // 5. Return clean, transparent response to the caller
         const data = result.data!;
+        await notifyInvoiceCleared(organization.id, body.invoiceId, data.status, data.uuid);
         return NextResponse.json({
             success: true,
             invoiceId: data.id,

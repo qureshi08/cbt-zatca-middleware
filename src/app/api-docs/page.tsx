@@ -137,6 +137,7 @@ export default async function ApiDocsPage() {
           </tbody>
         </table>
         <p style={{ ...hint, marginTop: 8 }}>Try any of the six in the tester above. B2B (standard) requires <code>buyer</code>; B2C (simplified) doesn&apos;t.</p>
+        <p style={{ ...hint, marginTop: 8 }}><b>Tax categories:</b> each line item has a <code>vatCategory</code> — <code>S</code> standard (15%), <code>Z</code> zero-rated, <code>E</code> exempt, <code>O</code> out-of-scope. For <code>Z</code>/<code>E</code>/<code>O</code>, add an <code>exemptionReason</code> (and set <code>vatRate: 0</code>).</p>
       </div>
 
       {/* ENDPOINTS */}

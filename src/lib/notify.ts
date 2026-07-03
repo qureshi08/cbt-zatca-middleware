@@ -28,6 +28,38 @@ export async function sendEmail(to: string | string[], subject: string, html: st
   }
 }
 
+/**
+ * Deliver an invoice status change to the tenant's configured callback URL
+ * (organizations.notify_url), if any. Best-effort with a short timeout; never
+ * throws into the caller.
+ */
+export async function deliverStatusWebhook(
+  orgId: string,
+  payload: { invoiceId: string; success: boolean; zatcaStatus?: string; uuid?: string; error?: string },
+): Promise<void> {
+  try {
+    const { data: org } = await supabaseAdmin.from("organizations").select("notify_url").eq("id", orgId).maybeSingle();
+    const url = (org as { notify_url?: string } | null)?.notify_url;
+    if (!url) return;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4000);
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-zatca-event": "invoice.status" },
+      body: JSON.stringify({ event: "invoice.status", ...payload, timestamp: new Date().toISOString() }),
+      signal: ctrl.signal,
+    }).catch((e) => console.warn("[webhook] delivery failed:", e.message));
+    clearTimeout(t);
+  } catch (e: any) {
+    console.warn("[webhook] delivery error:", e.message);
+  }
+}
+
+/** Notify a tenant that an invoice cleared/reported (fires the outbound webhook). */
+export async function notifyInvoiceCleared(orgId: string, invoiceNumber: string, zatcaStatus?: string, uuid?: string): Promise<void> {
+  await deliverStatusWebhook(orgId, { invoiceId: invoiceNumber, success: true, zatcaStatus, uuid });
+}
+
 /** All member email addresses for a tenant (its logged-in users). */
 export async function orgEmails(orgId: string): Promise<string[]> {
   const { data: members } = await supabaseAdmin.from("tenant_members").select("user_id").eq("organization_id", orgId);
@@ -46,6 +78,8 @@ export async function orgEmails(orgId: string): Promise<string[]> {
  * never throws into the caller's response path.
  */
 export async function notifyInvoiceFailure(orgId: string, invoiceNumber: string, error?: string): Promise<void> {
+  // Also push the failure to the tenant's callback URL, if configured.
+  await deliverStatusWebhook(orgId, { invoiceId: invoiceNumber, success: false, error });
   try {
     const emails = await orgEmails(orgId);
     if (!emails.length) return;

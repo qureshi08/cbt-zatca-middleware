@@ -6,7 +6,7 @@ import { OdooClient } from '@/lib/odoo/client';
 import { generateInvoicePDF } from '@/lib/zatca/pdf/generator';
 import { decryptSecret } from '@/lib/secrets';
 import { priorFiled } from '@/lib/zatca/idempotency';
-import { notifyInvoiceFailure } from '@/lib/notify';
+import { notifyInvoiceFailure, notifyInvoiceCleared } from '@/lib/notify';
 
 /**
  * POST /api/odoo/webhook
@@ -310,6 +310,7 @@ export async function POST(req: NextRequest) {
             }
 
             const data = result.data!;
+            await notifyInvoiceCleared(organization.id, odooInvoice.invoiceId, data.status, data.uuid);
             return NextResponse.json({
                 success: true,
                 invoiceId: data.id,
