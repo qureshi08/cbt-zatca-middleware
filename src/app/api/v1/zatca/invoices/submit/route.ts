@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AuthService } from '@/lib/auth-service';
 import { generateInvoiceAction } from '@/lib/zatca/actions';
 import { priorFiled } from '@/lib/zatca/idempotency';
+import { notifyInvoiceFailure } from '@/lib/notify';
 import { supabaseAdmin } from '@/lib/supabase';
 
 /**
@@ -137,6 +138,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (!result.success) {
+            await notifyInvoiceFailure(organization.id, body.invoiceId, result.error);
             return NextResponse.json({
                 success: false,
                 error: result.error

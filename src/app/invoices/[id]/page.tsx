@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { getActiveOrg } from "@/lib/org";
 import { supabaseAdmin } from "@/lib/supabase";
+import { resubmitInvoice } from "@/lib/actions";
+import { btn } from "@/lib/ui";
 
 const card: React.CSSProperties = { background: "#fff", border: "1px solid #e3e8ef", borderRadius: 10, padding: "18px 20px" };
 
-export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function InvoiceDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ retry?: string; msg?: string }> }) {
   const { id } = await params;
+  const sp = await searchParams;
   const org = await getActiveOrg();
   const { data: inv } = org
     ? await supabaseAdmin.from("invoices").select("*").eq("id", id).eq("organization_id", org.id).maybeSingle()
@@ -34,9 +37,16 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         {inv.invoice_type} · doc {inv.document_type} · {new Date(inv.created_at).toLocaleString()}
       </p>
 
-      {failed && inv.error_reason && (
-        <div style={{ background: "#fdeee9", border: "1px solid #f0c0b3", color: "#c0392b", padding: "10px 14px", borderRadius: 8, fontSize: 13, margin: "12px 0" }}>
-          <b>ZATCA rejected:</b> {inv.error_reason}
+      {sp.retry === "ok" && <div style={{ background: "#e9f8ef", border: "1px solid #b6e4c6", color: "#1f9d57", padding: "10px 14px", borderRadius: 8, fontSize: 13, margin: "12px 0" }}>✅ Retried successfully — the invoice is now cleared.</div>}
+      {sp.retry === "fail" && <div style={{ background: "#fdeee9", border: "1px solid #f0c0b3", color: "#c0392b", padding: "10px 14px", borderRadius: 8, fontSize: 13, margin: "12px 0" }}>❌ Retry failed: {sp.msg || "still rejected"}</div>}
+
+      {failed && (
+        <div style={{ background: "#fdeee9", border: "1px solid #f0c0b3", color: "#c0392b", padding: "12px 14px", borderRadius: 8, fontSize: 13, margin: "12px 0", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+          <span><b>Not cleared.</b>{inv.error_reason ? <> ZATCA rejected: {inv.error_reason}</> : <> Fix the issue, then retry.</>}</span>
+          <form action={resubmitInvoice} style={{ marginLeft: "auto" }}>
+            <input type="hidden" name="id" value={inv.id} />
+            <button type="submit" style={{ ...btn, padding: "8px 16px" }}>↻ Try again</button>
+          </form>
         </div>
       )}
 

@@ -8,6 +8,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getActiveOrg } from "@/lib/org";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { isPlatformAdmin } from "@/lib/admin";
+import { notifyInvoiceFailure } from "@/lib/notify";
 import { encryptSecret, decryptSecret } from "@/lib/secrets";
 import { completeOnboarding } from "@/lib/zatca/onboarding";
 import { generateInvoiceAction } from "@/lib/zatca/actions";
@@ -246,6 +247,48 @@ export async function provisionOdooAutomation() {
       ? `/onboarding?step=3&pok=${encodeURIComponent(msg)}`
       : `/onboarding?step=3&perr=${encodeURIComponent(msg || "Automated setup could not complete; use the manual steps below.")}`,
   );
+}
+
+/**
+ * Retry a failed invoice — re-run the sign+clear pipeline with its stored
+ * payload and update the record. One click, from the invoice page.
+ */
+export async function resubmitInvoice(fd: FormData) {
+  const org = await requireOrg();
+  const id = field(fd, "id");
+  const { data: inv } = await supabaseAdmin
+    .from("invoices")
+    .select("id, invoice_number, payload")
+    .eq("id", id)
+    .eq("organization_id", org.id)
+    .maybeSingle();
+  if (!inv) redirect("/invoices");
+
+  let res: { success: boolean; data?: Record<string, unknown>; error?: string };
+  try {
+    res = (await generateInvoiceAction(inv.payload as never, org.id)) as typeof res;
+  } catch (e) {
+    res = { success: false, error: e instanceof Error ? e.message : "Retry failed" };
+  }
+
+  if (res.success && res.data) {
+    const zStatus = String(res.data.status ?? "");
+    await supabaseAdmin.from("invoices").update({
+      status: zStatus === "REPORTED" ? "reported" : "cleared",
+      zatca_status: zStatus,
+      zatca_uuid: (res.data.uuid as string) ?? null,
+      qr_code: (res.data.qrCode as string) ?? null,
+      xml: (res.data.xml as string) ?? null,
+    }).eq("id", inv.id).eq("organization_id", org.id);
+    revalidatePath(`/invoices/${inv.id}`);
+    revalidatePath("/invoices");
+    redirect(`/invoices/${inv.id}?retry=ok`);
+  }
+
+  await supabaseAdmin.from("invoices").update({ status: "failed", zatca_status: "REJECTED" }).eq("id", inv.id).eq("organization_id", org.id);
+  await notifyInvoiceFailure(org.id, inv.invoice_number, res.error);
+  revalidatePath(`/invoices/${inv.id}`);
+  redirect(`/invoices/${inv.id}?retry=fail&msg=${encodeURIComponent(res.error || "Still failing")}`);
 }
 
 /** Let the user change their integration choice. */
