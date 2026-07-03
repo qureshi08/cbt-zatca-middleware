@@ -13,32 +13,23 @@ export async function GET(req: NextRequest) {
 
     const raw = (obj: unknown) => JSON.stringify(obj, null, 2);
 
-    const standardBody = {
-        type: 'standard',
-        documentType: '388',
-        invoiceId: 'INV-1001',
-        buyer: {
-            partyIdentification: { id: '310175397400003', schemeID: 'TXID' },
-            postalAddress: { streetName: 'King Fahd Road', buildingNumber: '1000', citySubdivisionName: 'Al Olaya', cityName: 'Riyadh', postalZone: '11564', country: 'SA' },
-            partyTaxScheme: { companyID: '310175397400003' },
-            partyLegalEntity: { registrationName: 'Al-Faisal Trading Co.' },
-        },
-        items: [{ name: 'Consulting services', quantity: 1, unitPrice: 1000, vatCategory: 'S', vatRate: 15 }],
+    const B2B_BUYER = {
+        partyIdentification: { id: '310175397400003', schemeID: 'TXID' },
+        postalAddress: { streetName: 'King Fahd Road', buildingNumber: '1000', citySubdivisionName: 'Al Olaya', cityName: 'Riyadh', postalZone: '11564', country: 'SA' },
+        partyTaxScheme: { companyID: '310175397400003' },
+        partyLegalEntity: { registrationName: 'Al-Faisal Trading Co.' },
     };
-    const simplifiedBody = {
-        type: 'simplified',
-        documentType: '388',
-        invoiceId: 'INV-2001',
-        items: [{ name: 'Retail item', quantity: 2, unitPrice: 50, vatCategory: 'S', vatRate: 15 }],
-    };
-    const creditNoteBody = {
-        type: 'standard',
-        documentType: '381',
-        invoiceId: 'CN-1001',
-        originalInvoiceId: 'INV-1001',
-        creditReason: 'Return of goods',
-        buyer: standardBody.buyer,
-        items: standardBody.items,
+    // Full 2×3 document matrix: {B2B standard | B2C simplified} × {invoice 388 | credit 381 | debit 383}
+    const sample = (customer: 'b2b' | 'b2c', doc: '388' | '381' | '383') => {
+        const type = customer === 'b2b' ? 'standard' : 'simplified';
+        const tag = customer.toUpperCase();
+        const body: Record<string, unknown> = {
+            type, documentType: doc, invoiceId: `API-${tag}-${doc}-001`,
+            ...(customer === 'b2b' ? { buyer: B2B_BUYER } : {}),
+            items: [{ name: 'Consulting services', quantity: 1, unitPrice: 1000, vatCategory: 'S', vatRate: 15 }],
+        };
+        if (doc !== '388') { body.originalInvoiceId = `API-${tag}-388-001`; body.creditReason = doc === '381' ? 'Return of goods' : 'Additional charges'; }
+        return body;
     };
 
     const jsonReq = (name: string, method: string, path: string, body?: unknown) => ({
@@ -65,10 +56,25 @@ export async function GET(req: NextRequest) {
             { key: 'apiKey', value: 'sk_zatca_live_REPLACE_ME' },
         ],
         item: [
-            jsonReq('Submit invoice — Standard (B2B, clearance)', 'POST', '/api/v1/zatca/invoices/submit', standardBody),
-            jsonReq('Submit invoice — Simplified (B2C, reporting)', 'POST', '/api/v1/zatca/invoices/submit', simplifiedBody),
-            jsonReq('Submit Credit Note (381)', 'POST', '/api/v1/zatca/invoices/submit', creditNoteBody),
+            {
+                name: 'B2B — Standard (clearance)',
+                item: [
+                    jsonReq('Invoice (388)', 'POST', '/api/v1/zatca/invoices/submit', sample('b2b', '388')),
+                    jsonReq('Credit note (381)', 'POST', '/api/v1/zatca/invoices/submit', sample('b2b', '381')),
+                    jsonReq('Debit note (383)', 'POST', '/api/v1/zatca/invoices/submit', sample('b2b', '383')),
+                ],
+            },
+            {
+                name: 'B2C — Simplified (reporting)',
+                item: [
+                    jsonReq('Invoice (388)', 'POST', '/api/v1/zatca/invoices/submit', sample('b2c', '388')),
+                    jsonReq('Credit note (381)', 'POST', '/api/v1/zatca/invoices/submit', sample('b2c', '381')),
+                    jsonReq('Debit note (383)', 'POST', '/api/v1/zatca/invoices/submit', sample('b2c', '383')),
+                ],
+            },
             jsonReq('List invoices', 'GET', '/api/v1/zatca/invoices'),
+            jsonReq('Get one invoice', 'GET', '/api/v1/zatca/invoices/INV-1001'),
+            jsonReq('Get compliance PDF', 'GET', '/api/v1/zatca/invoices/INV-1001/pdf'),
             jsonReq('Summary / KPIs', 'GET', '/api/v1/zatca/summary'),
         ],
     };

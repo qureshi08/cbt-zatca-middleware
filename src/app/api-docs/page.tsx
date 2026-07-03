@@ -108,17 +108,52 @@ export default async function ApiDocsPage() {
         <div style={copybox}>x-api-key: sk_zatca_live_…</div>
       </div>
 
+      {/* DOCUMENT TYPES */}
+      <div style={card}>
+        <h3 style={{ margin: "0 0 6px" }}>Document types</h3>
+        <p style={{ ...hint, margin: "0 0 10px" }}>The same endpoint handles all six. <code>type</code> sets the tax flow; <code>documentType</code> sets the document. Credit/debit notes also need <code>originalInvoiceId</code> + <code>creditReason</code>.</p>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+          <thead>
+            <tr style={{ color: cbt.textFaint, textAlign: "left" }}>
+              <th style={{ padding: "6px 8px", fontWeight: 600 }}></th>
+              <th style={{ padding: "6px 8px", fontWeight: 600 }}>Invoice · 388</th>
+              <th style={{ padding: "6px 8px", fontWeight: 600 }}>Credit note · 381</th>
+              <th style={{ padding: "6px 8px", fontWeight: 600 }}>Debit note · 383</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style={{ borderTop: `1px solid ${cbt.border}` }}>
+              <td style={{ padding: "8px", fontWeight: 600 }}>B2B <span style={{ ...hint, margin: 0 }}>(<code>type: standard</code>)</span></td>
+              <td style={{ padding: "8px", color: cbt.primaryDark }}>Clearance</td>
+              <td style={{ padding: "8px", color: cbt.primaryDark }}>Clearance</td>
+              <td style={{ padding: "8px", color: cbt.primaryDark }}>Clearance</td>
+            </tr>
+            <tr style={{ borderTop: `1px solid ${cbt.border}` }}>
+              <td style={{ padding: "8px", fontWeight: 600 }}>B2C <span style={{ ...hint, margin: 0 }}>(<code>type: simplified</code>)</span></td>
+              <td style={{ padding: "8px", color: cbt.primary }}>Reporting</td>
+              <td style={{ padding: "8px", color: cbt.primary }}>Reporting</td>
+              <td style={{ padding: "8px", color: cbt.primary }}>Reporting</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style={{ ...hint, marginTop: 8 }}>Try any of the six in the tester above. B2B (standard) requires <code>buyer</code>; B2C (simplified) doesn&apos;t.</p>
+      </div>
+
       {/* ENDPOINTS */}
       <div style={card}>
         <h3 style={{ margin: "0 0 8px" }}>Endpoints</h3>
         <EndpointRow method="POST" path="/api/v1/zatca/invoices/submit" desc="Sign + clear/report an invoice" />
         <EndpointRow method="GET" path="/api/v1/zatca/invoices" desc="List your invoices" />
+        <EndpointRow method="GET" path="/api/v1/zatca/invoices/{id}" desc="Retrieve one invoice" />
+        <EndpointRow method="GET" path="/api/v1/zatca/invoices/{id}/pdf" desc="Compliance PDF (QR embedded)" />
         <EndpointRow method="GET" path="/api/v1/zatca/summary" desc="Cleared/reported/failed KPIs" />
 
         <p style={{ ...hint, marginTop: 16, marginBottom: 2 }}><b>POST /submit — request body</b></p>
         <pre style={codeBox}>{submitBody}</pre>
         <p style={{ ...hint, marginTop: 10, marginBottom: 2 }}><b>Response</b> (<code>422</code> on ZATCA rejection with <code>validationMessages</code>, <code>401</code> on a bad key)</p>
         <pre style={codeBox}>{responseBody}</pre>
+        <p style={{ ...hint, marginTop: 12 }}><b>Idempotency:</b> submitting the same <code>invoiceId</code> twice won&apos;t double-file — the second call returns the original result with <code>&quot;idempotent&quot;: true</code>. Safe to retry.</p>
+        <p style={{ ...hint, marginTop: 6 }}>Machine-readable spec: <a href={`${base}/api/openapi.json`} target="_blank" rel="noreferrer">OpenAPI 3.1</a>.</p>
       </div>
 
       {/* TOOLS */}

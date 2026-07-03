@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AuthService } from '@/lib/auth-service';
 import { generateInvoiceAction } from '@/lib/zatca/actions';
+import { priorFiled } from '@/lib/zatca/idempotency';
 import { supabaseAdmin } from '@/lib/supabase';
 
 /**
@@ -43,6 +44,21 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({
                 error: `Missing required fields: type, invoiceId, items ${isStandard ? ', buyer' : ''}`
             }, { status: 400 });
+        }
+
+        // 2b. Idempotency — if this invoiceId was already filed, return it (no re-file).
+        const prior = await priorFiled(organization.id, body.invoiceId);
+        if (prior) {
+            return NextResponse.json({
+                success: true,
+                idempotent: true,
+                invoiceId: prior.invoice_number,
+                uuid: prior.zatca_uuid,
+                zatcaStatus: prior.zatca_status,
+                qrCode: prior.qr_code,
+                signedXml: prior.xml ? Buffer.from(prior.xml).toString('base64') : undefined,
+                timestamp: new Date().toISOString(),
+            });
         }
 
         // 3. Generate, Sign, and Submit to ZATCA

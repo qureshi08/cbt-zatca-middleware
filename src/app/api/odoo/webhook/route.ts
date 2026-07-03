@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { OdooClient } from '@/lib/odoo/client';
 import { generateInvoicePDF } from '@/lib/zatca/pdf/generator';
 import { decryptSecret } from '@/lib/secrets';
+import { priorFiled } from '@/lib/zatca/idempotency';
 
 /**
  * POST /api/odoo/webhook
@@ -187,6 +188,12 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({
                     error: `Failed to fetch invoice from Odoo: ${err.message}`
                 }, { status: 422 });
+            }
+
+            // 3b. Idempotency — skip re-filing if this invoice was already cleared.
+            const dup = await priorFiled(organization.id, odooInvoice.invoiceId);
+            if (dup) {
+                return NextResponse.json({ success: true, idempotent: true, invoiceId: dup.invoice_number, uuid: dup.zatca_uuid, zatcaStatus: dup.zatca_status });
             }
 
             // 4. Submit invoice to ZATCA

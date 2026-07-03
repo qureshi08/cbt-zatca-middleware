@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { ZohoClient, type ZohoEntityType } from '@/lib/zoho/client';
 import { generateInvoicePDF } from '@/lib/zatca/pdf/generator';
 import { decryptSecret } from '@/lib/secrets';
+import { priorFiled } from '@/lib/zatca/idempotency';
 
 /**
  * POST /api/zoho/webhook
@@ -216,6 +217,12 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({
                     error: `Failed to fetch document from Zoho Books: ${err.message}`
                 }, { status: 422 });
+            }
+
+            // 3b. Idempotency — skip re-filing if this document was already cleared.
+            const dup = await priorFiled(organization.id, zohoInvoice.invoiceId);
+            if (dup) {
+                return NextResponse.json({ success: true, idempotent: true, invoiceId: dup.invoice_number, uuid: dup.zatca_uuid, zatcaStatus: dup.zatca_status });
             }
 
             // 4. Submit invoice to ZATCA
