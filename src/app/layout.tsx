@@ -5,10 +5,28 @@ import { AppProvider } from '@/context/AppContext';
 import { getCurrentUser } from '@/lib/supabase/server';
 import { isPlatformAdmin } from '@/lib/admin';
 
+const SITE_URL = 'https://zatca.convergentbt.com';
+const TITLE = 'ZATCA Middleware – Phase 2 E-Invoicing Platform';
+const DESCRIPTION = 'Become and stay ZATCA-compliant without leaving the software you already use. Connect Odoo, Zoho, or your own API and clear/report invoices automatically. By Convergent Business Technologies.';
+
 export const metadata: Metadata = {
-  title: 'ZATCA Middleware – Phase 2 E-Invoicing Platform',
-  description: 'ZATCA Phase 2 e-invoicing middleware. Connect Odoo or Zoho (or our API) and clear/report invoices automatically.',
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
   icons: { icon: '/favicon.ico' },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: 'ZATCA Middleware · Convergent Business Technologies',
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
