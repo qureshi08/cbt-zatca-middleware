@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { updateSupportRequestStatus } from "@/lib/actions";
 import { statusPill as pill } from "@/lib/ui";
 
-const card: React.CSSProperties = { background: "#fff", border: "1px solid #e3e8ef", borderRadius: 10, marginBottom: 16 };
+const card: React.CSSProperties = { background: "#fff", border: "1px solid #E2E8E4", borderRadius: 10, marginBottom: 16 };
 const input: React.CSSProperties = { padding: "7px 9px", border: "1px solid #cfd8e3", borderRadius: 7, fontSize: 12.5 };
 const btn: React.CSSProperties = { background: "#00994D", color: "#fff", border: "none", padding: "7px 12px", borderRadius: 7, fontSize: 12.5, fontWeight: 600, cursor: "pointer" };
 const th: React.CSSProperties = { textAlign: "left", padding: "10px 14px", fontWeight: 600, color: "#8a97a6", fontSize: 11, textTransform: "uppercase" };

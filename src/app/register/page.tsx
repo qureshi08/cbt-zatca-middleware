@@ -75,9 +75,9 @@ function RegisterInner() {
       </form>
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "18px 0" }}>
-        <div style={{ flex: 1, height: 1, background: "#e3e8ef" }} />
+        <div style={{ flex: 1, height: 1, background: "#E2E8E4" }} />
         <span style={{ color: "#8a97a6", fontSize: 12 }}>or</span>
-        <div style={{ flex: 1, height: 1, background: "#e3e8ef" }} />
+        <div style={{ flex: 1, height: 1, background: "#E2E8E4" }} />
       </div>
 
       <button type="button" onClick={googleSignUp} disabled={gLoading} style={{ ...authGhostBtn, opacity: gLoading ? 0.6 : 1 }}>

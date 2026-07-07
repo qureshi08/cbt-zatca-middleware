@@ -52,14 +52,14 @@ export default async function InvoicesPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, margin: "16px 0" }}>
         {kpis.map((k) => (
-          <div key={k.l} style={{ background: "#fff", border: "1px solid #e3e8ef", borderRadius: 10, padding: "16px 18px" }}>
+          <div key={k.l} style={{ background: "#fff", border: "1px solid #E2E8E4", borderRadius: 10, padding: "16px 18px" }}>
             <div style={{ fontSize: 26, fontWeight: 700, color: k.c }}>{k.n}</div>
             <div style={{ color: "#6b7785", fontSize: 12 }}>{k.l}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid #e3e8ef", borderRadius: 10, overflow: "hidden" }}>
+      <div style={{ background: "#fff", border: "1px solid #E2E8E4", borderRadius: 10, overflow: "hidden" }}>
         {rows.length === 0 ? (
           <div style={{ textAlign: "center", padding: "48px 20px", color: "#8a97a6" }}>
             <div style={{ fontSize: 34 }}>🧾</div>
@@ -70,13 +70,13 @@ export default async function InvoicesPage() {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr style={{ textAlign: "left", color: "#6b7785", fontSize: 11.5, textTransform: "uppercase" }}>
-                <th style={{ padding: "10px 14px", borderBottom: "1px solid #e3e8ef" }}>Invoice</th>
-                <th style={{ padding: "10px 14px", borderBottom: "1px solid #e3e8ef" }}>Type</th>
-                <th style={{ padding: "10px 14px", borderBottom: "1px solid #e3e8ef" }}>Doc</th>
-                <th style={{ padding: "10px 14px", borderBottom: "1px solid #e3e8ef" }}>Amount</th>
-                <th style={{ padding: "10px 14px", borderBottom: "1px solid #e3e8ef" }}>ZATCA</th>
-                <th style={{ padding: "10px 14px", borderBottom: "1px solid #e3e8ef" }}>Date</th>
-                <th style={{ padding: "10px 14px", borderBottom: "1px solid #e3e8ef" }}></th>
+                <th style={{ padding: "10px 14px", borderBottom: "1px solid #E2E8E4" }}>Invoice</th>
+                <th style={{ padding: "10px 14px", borderBottom: "1px solid #E2E8E4" }}>Type</th>
+                <th style={{ padding: "10px 14px", borderBottom: "1px solid #E2E8E4" }}>Doc</th>
+                <th style={{ padding: "10px 14px", borderBottom: "1px solid #E2E8E4" }}>Amount</th>
+                <th style={{ padding: "10px 14px", borderBottom: "1px solid #E2E8E4" }}>ZATCA</th>
+                <th style={{ padding: "10px 14px", borderBottom: "1px solid #E2E8E4" }}>Date</th>
+                <th style={{ padding: "10px 14px", borderBottom: "1px solid #E2E8E4" }}></th>
               </tr>
             </thead>
             <tbody>

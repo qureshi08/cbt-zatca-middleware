@@ -1,11 +1,17 @@
 import { ImageResponse } from 'next/og';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
-export const runtime = 'edge';
+// nodejs (not edge) runtime so we can read the real CBT logo mark from disk.
+export const runtime = 'nodejs';
 export const alt = 'ZATCA Middleware — Phase 2 E-Invoicing Platform';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
 export default async function OpengraphImage() {
+  const markBuffer = await readFile(join(process.cwd(), 'public', 'cbt-favicon-mark.png'));
+  const markSrc = `data:image/png;base64,${markBuffer.toString('base64')}`;
+
   return new ImageResponse(
     (
       <div
@@ -20,23 +26,8 @@ export default async function OpengraphImage() {
           fontFamily: 'sans-serif',
         }}
       >
-        <div
-          style={{
-            width: 108,
-            height: 108,
-            borderRadius: 24,
-            background: 'rgba(255,255,255,0.16)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 60,
-            fontWeight: 800,
-            color: '#fff',
-            marginBottom: 28,
-          }}
-        >
-          Z
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={markSrc} width={108} height={108} style={{ borderRadius: 24, marginBottom: 28 }} />
         <div style={{ fontSize: 60, fontWeight: 800, color: '#fff', letterSpacing: -1 }}>
           ZATCA Middleware
         </div>

@@ -7,7 +7,7 @@ import { isPlatformAdmin } from "@/lib/admin";
 import { getActiveZatcaEnv } from "@/lib/zatca/actions";
 import SignOutButton from "@/components/SignOutButton";
 
-const card: React.CSSProperties = { background: "#fff", border: "1px solid #e3e8ef", borderRadius: 10, padding: "16px 18px" };
+const card: React.CSSProperties = { background: "#fff", border: "1px solid #E2E8E4", borderRadius: 10, padding: "16px 18px" };
 
 function Pill({ s }: { s: string | null }) {
   const v = (s || "").toUpperCase();
@@ -70,8 +70,11 @@ export default async function DashboardPage() {
 
   return (
     <div style={{ padding: "28px 32px", maxWidth: 1000 }}>
+      <span style={{ display: "block", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#00994D", marginBottom: 4 }}>Overview</span>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <h1 style={{ color: "#007A3D", fontSize: 22, margin: 0, flex: 1 }}>Dashboard</h1>
+        <h1 style={{ fontFamily: "var(--font-heading)", color: "#0C1A10", fontSize: 26, fontWeight: 700, margin: 0, flex: 1 }}>
+          Dashboard
+        </h1>
         {live
           ? <span style={{ fontSize: 11, padding: "3px 9px", borderRadius: 20, background: "#e9f8ef", color: "#1f7a45", border: "1px solid #b6e4c6", fontWeight: 600 }}>● Live · ZATCA</span>
           : <span style={{ fontSize: 11, padding: "3px 9px", borderRadius: 20, background: "#fff6e0", color: "#8a5a00", border: "1px solid #f0d48a", fontWeight: 600 }}>● Demo mode</span>}

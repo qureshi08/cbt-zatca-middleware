@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { resubmitInvoice } from "@/lib/actions";
 import { btn } from "@/lib/ui";
 
-const card: React.CSSProperties = { background: "#fff", border: "1px solid #e3e8ef", borderRadius: 10, padding: "18px 20px" };
+const card: React.CSSProperties = { background: "#fff", border: "1px solid #E2E8E4", borderRadius: 10, padding: "18px 20px" };
 
 export default async function InvoiceDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ retry?: string; msg?: string }> }) {
   const { id } = await params;

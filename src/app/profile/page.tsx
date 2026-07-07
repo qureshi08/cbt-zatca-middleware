@@ -15,7 +15,7 @@ export default async function ProfilePage() {
         Your seller identity — used on every ZATCA invoice. Must match your ZATCA registration.
       </p>
 
-      <form action={saveProfile} style={{ background: "#fff", border: "1px solid #e3e8ef", borderRadius: 10, padding: "18px 20px", marginTop: 14 }}>
+      <form action={saveProfile} style={{ background: "#fff", border: "1px solid #E2E8E4", borderRadius: 10, padding: "18px 20px", marginTop: 14 }}>
         <div style={row}>
           <div style={{ flex: 1 }}>
             <label style={label}>Legal name (EN)</label>

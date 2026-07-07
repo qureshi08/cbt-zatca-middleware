@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getActiveOrg } from "@/lib/org";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const card: React.CSSProperties = { background: "#fff", border: "1px solid #e3e8ef", borderRadius: 10 };
+const card: React.CSSProperties = { background: "#fff", border: "1px solid #E2E8E4", borderRadius: 10 };
 const pill = (bg: string, fg: string): React.CSSProperties => ({ background: bg, color: fg, fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: 0.3, whiteSpace: "nowrap" });
 
 type LogRow = {

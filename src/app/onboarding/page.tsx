@@ -8,7 +8,7 @@ import {
 } from "@/lib/actions";
 import { getActiveZatcaEnv } from "@/lib/zatca/actions";
 
-const card: React.CSSProperties = { background: "#fff", border: "1px solid #e3e8ef", borderRadius: 10, padding: "18px 20px", marginBottom: 14 };
+const card: React.CSSProperties = { background: "#fff", border: "1px solid #E2E8E4", borderRadius: 10, padding: "18px 20px", marginBottom: 14 };
 const label: React.CSSProperties = { display: "block", fontSize: 12, color: "#33414f", margin: "12px 0 3px", fontWeight: 600 };
 const hint: React.CSSProperties = { fontSize: 11.5, color: "#8a97a6", margin: "0 0 4px" };
 const input: React.CSSProperties = { width: "100%", padding: "8px 10px", border: "1px solid #cfd8e3", borderRadius: 7, fontSize: 13 };
@@ -55,7 +55,8 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
 
   return (
     <div style={{ padding: "28px 32px", maxWidth: 880 }}>
-      <h1 style={{ color: "#007A3D", fontSize: 22, margin: 0 }}>Onboarding</h1>
+      <span style={{ display: "block", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#00994D", marginBottom: 4 }}>One-time setup</span>
+      <h1 style={{ fontFamily: "var(--font-heading)", color: "#0C1A10", fontSize: 26, fontWeight: 700, margin: 0 }}>Onboarding</h1>
       <p style={{ color: "#6b7785", fontSize: 13, marginTop: 4 }}>
         One-time setup. You&apos;re in <strong>Demo mode</strong> (ZATCA simulation, OTP 123456) — nothing is legally filed.
         {zatcaOnboarded && <> &nbsp;·&nbsp; <Link href="/onboarding?step=3">Manage connection</Link></>}
@@ -67,7 +68,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
           const n = i + 1, isDone = done[i], on = selected === n;
           return (
             <Link key={s} href={`/onboarding?step=${n}`} style={{ flex: 1, textDecoration: "none", padding: "10px 8px", borderRadius: 8, textAlign: "center", fontSize: 12.5,
-              border: `1px solid ${on ? "#00994D" : isDone ? "#b6e4c6" : "#e3e8ef"}`,
+              border: `1px solid ${on ? "#00994D" : isDone ? "#b6e4c6" : "#E2E8E4"}`,
               background: on ? "#E6F5ED" : isDone ? "#f1faf4" : "#fff",
               color: on ? "#007A3D" : isDone ? "#1f9d57" : "#6b7785", fontWeight: on ? 700 : 500, boxShadow: on ? "0 1px 4px rgba(0,153,77,.15)" : "none" }}>
               {isDone ? "✓ " : `${n}. `}{s}
@@ -116,7 +117,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
                 ].map((o) => (
                   <form key={o.id} action={setIntegration}>
                     <input type="hidden" name="integration" value={o.id} />
-                    <button type="submit" style={{ ...card, marginBottom: 0, cursor: "pointer", textAlign: "left", width: "100%", border: "2px solid #e3e8ef" }}>
+                    <button type="submit" style={{ ...card, marginBottom: 0, cursor: "pointer", textAlign: "left", width: "100%", border: "2px solid #E2E8E4" }}>
                       <div style={{ fontWeight: 600, marginBottom: 6 }}>{o.title}</div>
                       <div style={{ color: "#6b7785", fontSize: 12 }}>{o.desc}</div>
                     </button>
@@ -431,7 +432,7 @@ function OdooGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
         </div>
         <details style={{ fontSize: 12.5, marginBottom: 10 }}>
           <summary style={{ cursor: "pointer", color: "#00994D", fontWeight: 600 }}>🔍 Where do I find each value?</summary>
-          <div style={{ padding: "10px 12px", marginTop: 6, background: "#f7f9fc", border: "1px solid #e3e8ef", borderRadius: 8, color: "#33414f", lineHeight: 1.7 }}>
+          <div style={{ padding: "10px 12px", marginTop: 6, background: "#f7f9fc", border: "1px solid #E2E8E4", borderRadius: 8, color: "#33414f", lineHeight: 1.7 }}>
             <p style={{ margin: "0 0 6px" }}><b>URL</b> — your browser&apos;s address bar when Odoo is open, e.g. <code>https://yourco.odoo.com</code>.</p>
             <p style={{ margin: "0 0 6px" }}><b>Database</b> — usually the word before <code>.odoo.com</code> (for Odoo Online we auto-correct casing). Unsure? Settings → bottom → &quot;Activate developer mode&quot;, then Settings → Technical / ⚙️ About.</p>
             <p style={{ margin: "0 0 6px" }}><b>Username</b> — the email you log into Odoo with.</p>
@@ -470,7 +471,7 @@ function OdooGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
           <div style={{ marginTop: 10 }}>
         <p style={hint}>Create a <b>Server Action</b> that sends each posted invoice to this middleware, and an <b>Automated Action</b> that runs it. We use Odoo&apos;s native <b>Send Webhook Notification</b> — Odoo&apos;s &quot;Execute Code&quot; sandbox blocks <code>import</code> (the &quot;forbidden opcode&quot; error), so a webhook action is the reliable, no-code way. If you don&apos;t see <b>Automated Actions</b> under Settings → Technical → Automation, install the <b>Automation Rules</b> app first (Apps → search <code>Automation Rules</code> → Activate).</p>
 
-        <div style={{ background: "#f7f9fc", border: "1px solid #e3e8ef", borderRadius: 8, padding: "10px 12px", margin: "10px 0" }}>
+        <div style={{ background: "#f7f9fc", border: "1px solid #E2E8E4", borderRadius: 8, padding: "10px 12px", margin: "10px 0" }}>
           <p style={{ ...hint, margin: "0 0 6px" }}><b>Webhook key (manual path only).</b> Generate it — it&apos;s embedded in the URL you paste in step A6 below.</p>
           <KeyInline newkey={apiKey} />
         </div>
@@ -502,7 +503,7 @@ function OdooGuide({ base, apiKey, connected }: { base: string; apiKey?: string;
 
         <details style={{ margin: "8px 0", fontSize: 12.5 }}>
           <summary style={{ cursor: "pointer", color: "#6b7785" }}>Already had a ZATCA action from a previous setup? (optional)</summary>
-          <div style={{ padding: "10px 12px", marginTop: 6, background: "#f7f9fc", border: "1px solid #e3e8ef", borderRadius: 8, color: "#3a4a5a", lineHeight: 1.6 }}>
+          <div style={{ padding: "10px 12px", marginTop: 6, background: "#f7f9fc", border: "1px solid #E2E8E4", borderRadius: 8, color: "#3a4a5a", lineHeight: 1.6 }}>
             Reuse it instead of creating a new one — open it and set its <b>URL</b> to the value above. No duplicate, no clash.
           </div>
         </details>

@@ -20,18 +20,26 @@ export default function AuthShell({
       <div style={{ width: 410 }}>
         <div style={{ textAlign: "center", marginBottom: 18 }}>
           <Link href="/login" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 10 }}>
-            <span style={{ width: 34, height: 34, borderRadius: 9, background: "#00994D", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 17 }}>Z</span>
-            <span style={{ fontWeight: 800, color: "#007A3D", fontSize: 17, letterSpacing: -0.2 }}>ZATCA Middleware</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/cbt-favicon-mark.png" alt="" width={34} height={34} style={{ borderRadius: 9 }} />
+            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 700, color: "#007A3D", fontSize: 18, letterSpacing: -0.2 }}>ZATCA Middleware</span>
           </Link>
         </div>
-        <div style={{ background: "#fff", border: "1px solid #e3e8ef", borderRadius: 14, padding: "26px 26px 24px", boxShadow: "0 8px 30px rgba(0,153,77,.08)" }}>
-          <h1 style={{ fontSize: 19, color: "#1a2b3c", margin: "0 0 4px" }}>{title}</h1>
+        <div style={{ background: "#fff", border: "1px solid #E2E8E4", borderRadius: 14, padding: "26px 26px 24px", boxShadow: "0 8px 30px rgba(0,153,77,.08)" }}>
+          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 20, color: "#0C1A10", margin: "0 0 4px" }}>{title}</h1>
           {subtitle && <p style={{ color: "#6b7785", fontSize: 13, margin: "0 0 18px" }}>{subtitle}</p>}
           {children}
         </div>
         <p style={{ color: "#8a97a6", fontSize: 11.5, textAlign: "center", marginTop: 16 }}>
           {footerNote || <>ZATCA Phase-2 e-invoicing · KSA · Secure by design</>}
         </p>
+        {/* On a light background — safe to use the full wordmark (the brand kit
+            has no dark-mode variant, so this only appears on light surfaces). */}
+        <div style={{ textAlign: "center", marginTop: 22, opacity: 0.85 }}>
+          <p style={{ fontSize: 10, color: "#8a97a6", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Powered by</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/cbt-logo-primary.png" alt="Convergent Business Technologies" height={22} style={{ width: "auto" }} />
+        </div>
       </div>
     </div>
   );
