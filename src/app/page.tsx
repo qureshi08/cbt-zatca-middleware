@@ -122,7 +122,7 @@ export default function LandingPage() {
         <div style={{ ...container, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 24px" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/cbt-favicon-mark.png" alt="" width={30} height={30} style={{ borderRadius: 8 }} />
+            <img src="/cbt-favicon-mark.png" alt="" style={{ width: 30, height: 30, borderRadius: 8 }} />
             <span style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 17, color: cbt.primaryDark }}>ZATCA Middleware</span>
           </Link>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -226,7 +226,7 @@ export default function LandingPage() {
         <div style={{ ...container, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/cbt-logo-primary.png" alt={ORG_NAME} height={20} style={{ width: "auto" }} />
+            <img src="/cbt-logo-primary.png" alt={ORG_NAME} style={{ height: 20, width: 55 }} />
           </div>
           <div style={{ display: "flex", gap: 18, fontSize: 13 }}>
             <Link href="/login" style={{ color: cbt.textMuted, textDecoration: "none" }}>Sign in</Link>

@@ -21,7 +21,7 @@ export default function AuthShell({
         <div style={{ textAlign: "center", marginBottom: 18 }}>
           <Link href="/login" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 10 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/cbt-favicon-mark.png" alt="" width={34} height={34} style={{ borderRadius: 9 }} />
+            <img src="/cbt-favicon-mark.png" alt="" style={{ width: 34, height: 34, borderRadius: 9 }} />
             <span style={{ fontFamily: "var(--font-heading)", fontWeight: 700, color: "#007A3D", fontSize: 18, letterSpacing: -0.2 }}>ZATCA Middleware</span>
           </Link>
         </div>
@@ -38,7 +38,10 @@ export default function AuthShell({
         <div style={{ textAlign: "center", marginTop: 22, opacity: 0.85 }}>
           <p style={{ fontSize: 10, color: "#8a97a6", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Powered by</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/cbt-logo-primary.png" alt="Convergent Business Technologies" height={22} style={{ width: "auto" }} />
+          {/* Explicit width+height in `style` (not HTML attributes) — Tailwind's
+              preflight sets `img{height:auto}`, which overrides a bare `height`
+              attribute and blows the image up to its native 1024x372 size. */}
+          <img src="/cbt-logo-primary.png" alt="Convergent Business Technologies" style={{ height: 22, width: 61 }} />
         </div>
       </div>
     </div>

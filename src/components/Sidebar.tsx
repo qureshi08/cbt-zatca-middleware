@@ -25,7 +25,7 @@ export default function Sidebar({ email, isAdmin }: { email?: string; isAdmin?: 
     <aside style={{ width: 240, flexShrink: 0, background: "#0d1f15", color: "#cdd8e3", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <div style={{ padding: "18px 20px", borderBottom: "1px solid #1c3a2a", display: "flex", alignItems: "center", gap: 10 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/cbt-favicon-mark.png" alt="CBT" width={30} height={30} style={{ borderRadius: 8 }} />
+        <img src="/cbt-favicon-mark.png" alt="CBT" style={{ width: 30, height: 30, borderRadius: 8 }} />
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, color: "#fff", fontSize: 14, lineHeight: 1.1 }}>
           ZATCA<br /><span style={{ fontFamily: "var(--font-body)", fontWeight: 400, color: "#7d93a8", fontSize: 11 }}>Middleware</span>
         </div>
@@ -64,7 +64,7 @@ export default function Sidebar({ email, isAdmin }: { email?: string; isAdmin?: 
         <SignOutButton dark />
         <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 6, opacity: 0.55 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/cbt-favicon-mark.png" alt="" width={14} height={14} style={{ borderRadius: 3 }} />
+          <img src="/cbt-favicon-mark.png" alt="" style={{ width: 14, height: 14, borderRadius: 3 }} />
           <span style={{ fontSize: 10, color: "#7d93a8" }}>Convergent Business Technologies</span>
         </div>
       </div>
