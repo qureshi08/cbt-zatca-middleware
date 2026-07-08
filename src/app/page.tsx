@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { SITE_URL, SITE_NAME, ORG_NAME } from "@/lib/site";
 import { cbt } from "@/lib/ui";
 
-const TITLE = "ZATCA Middleware — Phase 2 E-Invoicing for Odoo, Zoho & Custom Software";
-const DESCRIPTION = "Become and stay ZATCA Phase 2 compliant without changing how you invoice. Connect Odoo, Zoho Books, or your own software — every invoice, credit note, and debit note is signed, cleared, and reported automatically. By Convergent Business Technologies.";
+const TITLE = "ZATCA Middleware — 5-Minute Setup for Odoo, Zoho, POS & Any Software";
+const DESCRIPTION = "Set up in about 5 minutes, then never think about ZATCA compliance again. Connect Odoo, Zoho Books, or virtually any accounting, invoicing, or POS software — every invoice, credit note, and debit note is signed, cleared, and reported to ZATCA automatically. By Convergent Business Technologies.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -31,12 +31,16 @@ const FAQ = [
     a: "ZATCA Phase 2 (the Integration Phase) requires businesses in Saudi Arabia to generate e-invoices in a structured XML format, have them cryptographically signed, and submit them to ZATCA in real time — cleared for B2B (standard) invoices, reported for B2C (simplified) invoices. ZATCA Middleware handles every step of this automatically for each invoice your business issues.",
   },
   {
-    q: "Which accounting software does it work with?",
-    a: "Odoo and Zoho Books are supported out of the box, with guided one-click setup. If you use different software — or your own custom system — you can connect directly through our REST API instead, with a live tester and a ready-made Postman collection.",
+    q: "Which accounting or POS software does it work with?",
+    a: "Odoo and Zoho Books are supported out of the box, with guided one-click setup. Beyond those, our REST API is built to be flexible enough to connect virtually any accounting, invoicing, or point-of-sale software — including systems you've built yourself — with a live tester and a ready-made Postman collection.",
   },
   {
     q: "Do I need to change how I create invoices?",
-    a: "No. You keep invoicing exactly as you do today in Odoo or Zoho Books. ZATCA Middleware picks up each invoice automatically in the background and handles signing, clearance, and reporting for you.",
+    a: "No. You keep invoicing exactly as you do today, in whatever software you already use. ZATCA Middleware picks up each invoice automatically in the background and handles signing, clearance, and reporting for you.",
+  },
+  {
+    q: "Do I need to log in and manage this regularly?",
+    a: "No. Setup is a one-time, roughly 5-minute step. After that, every invoice is handled automatically in the background — you don't need to open this dashboard again unless you want to. We'll only reach out by email if an invoice ever needs your attention.",
   },
   {
     q: "Does it handle credit notes and debit notes too?",
@@ -57,18 +61,18 @@ const FAQ = [
 ];
 
 const FEATURES = [
+  { t: "Set up once, in about 5 minutes", d: "A guided, one-click setup for Odoo and Zoho Books, or a simple API key for anything else. Most teams are fully running before their coffee gets cold." },
+  { t: "Works with virtually any software", d: "Beyond our one-click Odoo and Zoho Books connectors, our API is built to be this flexible — any accounting, invoicing, or POS system that can make an HTTP request can integrate." },
   { t: "All ZATCA Phase 2 document types", d: "Standard (B2B) and simplified (B2C) invoices, credit notes, and debit notes — 388, 381, and 383 — handled the same way." },
   { t: "Real-time clearance & reporting", d: "Signed UBL 2.1 XML, a ZATCA QR code, and the clearance/reporting status come back in seconds, every time." },
-  { t: "Odoo & Zoho Books integration", d: "Guided, one-click setup — no custom development, no middleware code to maintain." },
-  { t: "A real Developer API", d: "Build your own integration against a documented REST API, with an in-browser live tester and a ready Postman collection." },
-  { t: "Activity log & instant alerts", d: "See every attempt — success or failure — with the exact reason, and get notified the moment something needs attention." },
+  { t: "Set it and forget it", d: "Once you're connected, you don't need to log back in. We'll email you the instant an invoice needs attention — otherwise, it's fully hands-off." },
   { t: "Secure, multi-user by design", d: "Encrypted credentials and signing keys, per-tenant API keys, and team invitations so nobody shares a login." },
 ];
 
 const STEPS = [
-  { n: "1", t: "Connect", d: "Link Odoo or Zoho Books in a few clicks, or call our API directly from your own software." },
-  { n: "2", t: "We handle compliance", d: "Every invoice is signed, cleared (B2B) or reported (B2C) with ZATCA automatically, in real time." },
-  { n: "3", t: "See everything in one place", d: "A dashboard, a full activity log, and instant alerts if anything ever needs your attention." },
+  { n: "1", t: "Connect in minutes", d: "Link Odoo or Zoho Books in one click, or call our open API from any accounting, invoicing, or POS software you already use." },
+  { n: "2", t: "We handle compliance", d: "Every invoice is signed, cleared (B2B) or reported (B2C) with ZATCA automatically, the moment it's created." },
+  { n: "3", t: "Forget about it", d: "Keep invoicing exactly as you do today. You don't need to open this dashboard again — we'll only reach out if something needs your attention." },
 ];
 
 const jsonLd = [
@@ -140,16 +144,19 @@ export default function LandingPage() {
             Stay ZATCA-compliant, <span style={{ fontStyle: "italic", color: cbt.primary }}>automatically</span>
           </h1>
           <p style={{ fontSize: 18, color: cbt.textMuted, lineHeight: 1.6, margin: "0 0 30px" }}>
-            Connect Odoo, Zoho Books, or your own software. Every invoice, credit note, and debit note is signed,
-            cleared, and reported to ZATCA in real time — no manual filing, no compliance headaches.
+            Set up in about 5 minutes. Connect Odoo, Zoho Books, or virtually any accounting, invoicing, or POS
+            software you already use — every invoice, credit note, and debit note is signed, cleared, and reported
+            to ZATCA automatically. Keep working exactly as you do today; we deal with your compliance.
           </p>
           <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
             <Link href="/register" style={btnPrimary}>Get started free →</Link>
             <Link href="/login" style={btnGhost}>Sign in</Link>
           </div>
-          <p style={{ marginTop: 26, fontSize: 12, color: cbt.textFaint, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Works with Odoo · Zoho Books · Your own API
-          </p>
+          <div style={{ marginTop: 30, display: "flex", gap: 22, justifyContent: "center", flexWrap: "wrap", fontSize: 12, color: cbt.textFaint, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            <span>⏱ 5-minute setup</span>
+            <span>🔌 Any accounting or POS software</span>
+            <span>✓ Set once, forget it</span>
+          </div>
         </div>
       </section>
 
@@ -215,7 +222,7 @@ export default function LandingPage() {
             Ready to stop filing invoices by hand?
           </h2>
           <p style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, margin: "0 0 26px" }}>
-            Set up in minutes. Test everything free in Demo mode before you go live.
+            Set up in about 5 minutes. Test everything free in Demo mode before you go live.
           </p>
           <Link href="/register" style={{ ...btnPrimary, background: "#fff", color: cbt.primaryDark }}>Get started free →</Link>
         </div>
