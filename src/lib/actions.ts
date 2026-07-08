@@ -42,7 +42,7 @@ export async function saveProfile(fd: FormData) {
     })
     .eq("id", org.id);
   revalidatePath("/profile");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   redirect("/onboarding?step=2");
 }
 
@@ -121,7 +121,7 @@ export async function saveZohoConnection(fd: FormData) {
     { onConflict: "organization_id" },
   );
   revalidatePath("/onboarding");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
 
   if (!test.success) redirect(`/onboarding?step=3&cerr=${encodeURIComponent(test.error || "Could not reach Zoho — check your credentials.")}`);
 
@@ -160,7 +160,7 @@ export async function saveOdooConnection(fd: FormData) {
     { onConflict: "organization_id" },
   );
   revalidatePath("/onboarding");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
 
   if (!test.success) redirect(`/onboarding?step=3&cerr=${encodeURIComponent(test.error || "Could not reach Odoo — check URL/DB/credentials.")}`);
 
@@ -372,7 +372,7 @@ export async function runZatcaOnboarding(fd: FormData) {
     err = e instanceof Error ? e.message : "ZATCA onboarding failed";
   }
   revalidatePath("/onboarding");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   redirect(err ? `/onboarding?step=4&zerr=${encodeURIComponent(err)}` : "/onboarding?step=4");
 }
 
@@ -396,7 +396,7 @@ export async function runGoLive(fd: FormData) {
     err = e instanceof Error ? e.message : "Go-live onboarding failed";
   }
   revalidatePath("/onboarding");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   redirect(err ? `/onboarding?step=4&golive_err=${encodeURIComponent(err)}` : "/onboarding?step=4&golive_ok=1");
 }
 
@@ -448,7 +448,7 @@ export async function sendTestInvoice() {
   );
 
   revalidatePath("/onboarding");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   // Do not claim success if the invoice didn't actually persist.
   if (saveErr) {
     redirect(`/onboarding?step=4&terr=${encodeURIComponent(`Cleared as ${zStatus} but NOT saved: ${saveErr.message}. Run migration 003.`)}`);

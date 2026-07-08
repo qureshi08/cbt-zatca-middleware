@@ -4,11 +4,13 @@ import Sidebar from '@/components/Sidebar';
 import { AppProvider } from '@/context/AppContext';
 import { getCurrentUser } from '@/lib/supabase/server';
 import { isPlatformAdmin } from '@/lib/admin';
+import { SITE_URL, SITE_NAME, ORG_NAME } from '@/lib/site';
 
-const SITE_URL = 'https://zatca.convergentbt.com';
-const TITLE = 'ZATCA Middleware – Phase 2 E-Invoicing Platform';
-const DESCRIPTION = 'Become and stay ZATCA-compliant without leaving the software you already use. Connect Odoo, Zoho, or your own API and clear/report invoices automatically. By Convergent Business Technologies.';
+const TITLE = `${SITE_NAME} – Phase 2 E-Invoicing Platform`;
+const DESCRIPTION = `Become and stay ZATCA-compliant without leaving the software you already use. Connect Odoo, Zoho, or your own API and clear/report invoices automatically. By ${ORG_NAME}.`;
 
+// App-wide default metadata. The public landing page (src/app/page.tsx) overrides
+// title/description/openGraph/twitter with more specific, keyword-rich copy.
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: TITLE,
@@ -18,7 +20,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: SITE_URL,
-    siteName: 'ZATCA Middleware · Convergent Business Technologies',
+    siteName: `${SITE_NAME} · ${ORG_NAME}`,
     locale: 'en_US',
     type: 'website',
   },

@@ -173,7 +173,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <form action={sendTestInvoice}><button type="submit" style={btn}>Send a test invoice →</button></form>
                 <Link href="/invoices" style={ghost}>View invoices</Link>
-                <Link href="/" style={gray}>Dashboard</Link>
+                <Link href="/dashboard" style={gray}>Dashboard</Link>
               </div>
               {integration === "custom"
                 ? <p style={{ ...hint, marginTop: 14 }}>You&apos;re set up. Build &amp; test your integration on the <Link href="/api-docs">Developer API</Link> page (live tester, docs, Postman).</p>

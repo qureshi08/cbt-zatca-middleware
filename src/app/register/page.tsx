@@ -10,7 +10,7 @@ import GoogleIcon from "@/components/GoogleIcon";
 function RegisterInner() {
   const router = useRouter();
   const sp = useSearchParams();
-  const next = sp.get("next") || "/";
+  const next = sp.get("next") || "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");

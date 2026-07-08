@@ -10,9 +10,9 @@ import { isPlatformAdmin } from "@/lib/admin";
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = req.nextUrl;
   const code = searchParams.get("code");
-  const nextParam = searchParams.get("next") || "/";
+  const nextParam = searchParams.get("next") || "/dashboard";
   // Only allow internal redirects (no open-redirect).
-  const next = nextParam.startsWith("/") ? nextParam : "/";
+  const next = nextParam.startsWith("/") ? nextParam : "/dashboard";
 
   if (code) {
     const supabase = await createSupabaseServerClient();
@@ -28,6 +28,6 @@ export async function GET(req: NextRequest) {
       }
     }
   }
-  // For OAuth login `next` is "/", and the dashboard sends admins on to /admin.
+  // For OAuth login `next` defaults to /dashboard, which sends admins on to /admin.
   return NextResponse.redirect(`${origin}${next}`);
 }

@@ -27,7 +27,9 @@ export async function middleware(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
   const path = req.nextUrl.pathname;
+  // "/" is now the public marketing landing page (not the app) — public alongside auth routes.
   const isPublic =
+    path === "/" ||
     path.startsWith("/login") || path.startsWith("/register") ||
     path.startsWith("/auth") || path.startsWith("/api");
 
@@ -38,10 +40,10 @@ export async function middleware(req: NextRequest) {
     if (path && path !== "/") url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }
-  // Signed-in users shouldn't see the auth screens.
-  if (user && (path === "/login" || path === "/register")) {
+  // Signed-in users shouldn't see the auth screens or the marketing landing page.
+  if (user && (path === "/login" || path === "/register" || path === "/")) {
     const url = req.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/dashboard";
     url.search = "";
     return NextResponse.redirect(url);
   }
@@ -49,5 +51,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|manifest.webmanifest|opengraph-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
 };

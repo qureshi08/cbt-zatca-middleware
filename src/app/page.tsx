@@ -1,152 +1,240 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/supabase/server";
-import { getOnboardingState } from "@/lib/org";
-import { supabaseAdmin } from "@/lib/supabase";
-import { isPlatformAdmin } from "@/lib/admin";
-import { getActiveZatcaEnv } from "@/lib/zatca/actions";
-import SignOutButton from "@/components/SignOutButton";
+import type { Metadata } from "next";
+import { SITE_URL, SITE_NAME, ORG_NAME } from "@/lib/site";
+import { cbt } from "@/lib/ui";
 
-const card: React.CSSProperties = { background: "#fff", border: "1px solid #E2E8E4", borderRadius: 10, padding: "16px 18px" };
+const TITLE = "ZATCA Middleware — Phase 2 E-Invoicing for Odoo, Zoho & Custom Software";
+const DESCRIPTION = "Become and stay ZATCA Phase 2 compliant without changing how you invoice. Connect Odoo, Zoho Books, or your own software — every invoice, credit note, and debit note is signed, cleared, and reported automatically. By Convergent Business Technologies.";
 
-function Pill({ s }: { s: string | null }) {
-  const v = (s || "").toUpperCase();
-  const map: Record<string, [string, string]> = { CLEARED: ["#e6f6ec", "#1f9d57"], REPORTED: ["#E6F5ED", "#00994D"], REJECTED: ["#fdeeea", "#c0392b"], FAILED: ["#fdeeea", "#c0392b"] };
-  const [bg, fg] = map[v] || ["#f3f0e6", "#c77700"];
-  return <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 12, fontWeight: 600, background: bg, color: fg }}>{v || "PENDING"}</span>;
-}
+export const metadata: Metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: SITE_URL },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: `${SITE_NAME} · ${ORG_NAME}`,
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
+};
 
-function Check({ ok, children }: { ok: boolean; children: React.ReactNode }) {
-  return <li style={{ margin: "5px 0", color: ok ? "#1f9d57" : "#6b7785" }}>{ok ? "✅" : "⬜"} {children}</li>;
-}
+const FAQ = [
+  {
+    q: "What is ZATCA Phase 2 e-invoicing?",
+    a: "ZATCA Phase 2 (the Integration Phase) requires businesses in Saudi Arabia to generate e-invoices in a structured XML format, have them cryptographically signed, and submit them to ZATCA in real time — cleared for B2B (standard) invoices, reported for B2C (simplified) invoices. ZATCA Middleware handles every step of this automatically for each invoice your business issues.",
+  },
+  {
+    q: "Which accounting software does it work with?",
+    a: "Odoo and Zoho Books are supported out of the box, with guided one-click setup. If you use different software — or your own custom system — you can connect directly through our REST API instead, with a live tester and a ready-made Postman collection.",
+  },
+  {
+    q: "Do I need to change how I create invoices?",
+    a: "No. You keep invoicing exactly as you do today in Odoo or Zoho Books. ZATCA Middleware picks up each invoice automatically in the background and handles signing, clearance, and reporting for you.",
+  },
+  {
+    q: "Does it handle credit notes and debit notes too?",
+    a: "Yes. All three ZATCA document types are supported — tax invoices (388), credit notes (381), and debit notes (383) — for both standard (B2B, clearance) and simplified (B2C, reporting) invoice types.",
+  },
+  {
+    q: "Can I test it before going live?",
+    a: "Yes. Every account starts in Demo mode, which runs against ZATCA's simulation environment so you can test your full setup risk-free before switching to real, legally-binding filing — no code changes required to go live.",
+  },
+  {
+    q: "What happens if an invoice fails to clear?",
+    a: "You're notified immediately by email with the exact reason ZATCA rejected it, and you can retry with one click once it's fixed — no need to resend it from your accounting software.",
+  },
+  {
+    q: "Is my data secure?",
+    a: "Yes. Accounting-software credentials and ZATCA signing keys are encrypted at rest, every integration authenticates with per-tenant API keys, and your team can invite colleagues with their own logins rather than sharing one account.",
+  },
+];
 
-export default async function DashboardPage() {
-  const user = await getCurrentUser();
-  // Support staff aren't a customer tenant — send them straight to the console.
-  if (isPlatformAdmin(user?.email)) redirect("/admin");
-  const state = await getOnboardingState();
+const FEATURES = [
+  { t: "All ZATCA Phase 2 document types", d: "Standard (B2B) and simplified (B2C) invoices, credit notes, and debit notes — 388, 381, and 383 — handled the same way." },
+  { t: "Real-time clearance & reporting", d: "Signed UBL 2.1 XML, a ZATCA QR code, and the clearance/reporting status come back in seconds, every time." },
+  { t: "Odoo & Zoho Books integration", d: "Guided, one-click setup — no custom development, no middleware code to maintain." },
+  { t: "A real Developer API", d: "Build your own integration against a documented REST API, with an in-browser live tester and a ready Postman collection." },
+  { t: "Activity log & instant alerts", d: "See every attempt — success or failure — with the exact reason, and get notified the moment something needs attention." },
+  { t: "Secure, multi-user by design", d: "Encrypted credentials and signing keys, per-tenant API keys, and team invitations so nobody shares a login." },
+];
 
-  type Inv = { id: string; invoice_number: string; invoice_type: string; zatca_status: string | null; total_amount: number | null; created_at: string };
-  let rows: Inv[] = [];
-  if (state?.org) {
-    const { data } = await supabaseAdmin
-      .from("invoices")
-      .select("id,invoice_number,invoice_type,zatca_status,total_amount,created_at")
-      .eq("organization_id", state.org.id)
-      .order("created_at", { ascending: false })
-      .limit(100);
-    rows = (data ?? []) as Inv[];
-  }
-  const live = state?.org ? (await getActiveZatcaEnv(state.org.id)) === "real" : false;
+const STEPS = [
+  { n: "1", t: "Connect", d: "Link Odoo or Zoho Books in a few clicks, or call our API directly from your own software." },
+  { n: "2", t: "We handle compliance", d: "Every invoice is signed, cleared (B2B) or reported (B2C) with ZATCA automatically, in real time." },
+  { n: "3", t: "See everything in one place", d: "A dashboard, a full activity log, and instant alerts if anything ever needs your attention." },
+];
 
-  // Certificate-expiry warning (FR-ONB-7): warn when the active CSID is within 30 days of expiry.
-  let certDaysLeft: number | null = null;
-  if (state?.org) {
-    const { data: prof } = await supabaseAdmin
-      .from("zatca_profiles")
-      .select("csid_expires_at")
-      .eq("organization_id", state.org.id)
-      .eq("environment", live ? "real" : "demo")
-      .maybeSingle();
-    if (prof?.csid_expires_at) certDaysLeft = Math.ceil((new Date(prof.csid_expires_at).getTime() - Date.now()) / 86400000);
-  }
-  const certExpiring = certDaysLeft !== null && certDaysLeft <= 30;
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: ORG_NAME,
+    url: "https://convergentbt.com",
+    logo: `${SITE_URL}/cbt-logo-primary.png`,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: SITE_NAME,
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    url: SITE_URL,
+    description: DESCRIPTION,
+    provider: { "@type": "Organization", name: ORG_NAME, url: "https://convergentbt.com" },
+    featureList: FEATURES.map((f) => f.t),
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQ.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  },
+];
 
-  const up = (s: string | null) => (s || "").toUpperCase();
-  const cleared = rows.filter((i) => up(i.zatca_status) === "CLEARED").length;
-  const reported = rows.filter((i) => up(i.zatca_status) === "REPORTED").length;
-  const failed = rows.filter((i) => ["REJECTED", "FAILED"].includes(up(i.zatca_status))).length;
-  const volume = rows.reduce((a, i) => a + Number(i.total_amount ?? 0), 0);
+const container: React.CSSProperties = { maxWidth: 1100, margin: "0 auto", padding: "0 24px" };
+const section = (bg: string): React.CSSProperties => ({ background: bg, padding: "64px 0" });
+const h2Style: React.CSSProperties = { fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: "clamp(1.6rem, 2.5vw, 2.2rem)", letterSpacing: "-0.02em", color: cbt.textHeading, margin: "0 0 12px" };
+const eyebrowStyle: React.CSSProperties = { display: "block", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: cbt.primary, marginBottom: 8 };
+const btnPrimary: React.CSSProperties = { background: cbt.primary, color: "#fff", padding: "12px 26px", borderRadius: 6, fontSize: 14, fontWeight: 600, textDecoration: "none", display: "inline-block" };
+const btnGhost: React.CSSProperties = { background: "transparent", color: cbt.primary, border: `2px solid ${cbt.primary}`, padding: "10px 24px", borderRadius: 6, fontSize: 14, fontWeight: 600, textDecoration: "none", display: "inline-block" };
+const card: React.CSSProperties = { background: "#fff", border: `1px solid ${cbt.border}`, borderRadius: 12, padding: "22px 20px" };
 
-  const stepLabel: Record<string, string> = { profile: "Complete your business profile", integration: "Choose your accounting software", connect: "Connect your accounting software", zatca: "Run ZATCA onboarding (Demo)", done: "You're all set" };
-  const stepHref: Record<string, string> = { profile: "/profile", integration: "/onboarding?step=2", connect: "/onboarding?step=3", zatca: "/onboarding?step=4", done: "/onboarding" };
-
-  const kpis = [
-    { l: "Cleared (B2B)", n: cleared, c: "#1f9d57" },
-    { l: "Reported (B2C)", n: reported, c: "#00994D" },
-    { l: "Failed", n: failed, c: "#c0392b" },
-    { l: "Invoiced (SAR)", n: volume.toLocaleString(), c: "#007A3D" },
-  ];
-
+export default function LandingPage() {
   return (
-    <div style={{ padding: "28px 32px", maxWidth: 1000 }}>
-      <span style={{ display: "block", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#00994D", marginBottom: 4 }}>Overview</span>
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <h1 style={{ fontFamily: "var(--font-heading)", color: "#0C1A10", fontSize: 26, fontWeight: 700, margin: 0, flex: 1 }}>
-          Dashboard
-        </h1>
-        {live
-          ? <span style={{ fontSize: 11, padding: "3px 9px", borderRadius: 20, background: "#e9f8ef", color: "#1f7a45", border: "1px solid #b6e4c6", fontWeight: 600 }}>● Live · ZATCA</span>
-          : <span style={{ fontSize: 11, padding: "3px 9px", borderRadius: 20, background: "#fff6e0", color: "#8a5a00", border: "1px solid #f0d48a", fontWeight: 600 }}>● Demo mode</span>}
-        <SignOutButton />
-      </div>
-      <p style={{ color: "#6b7785", fontSize: 13, marginTop: 4 }}>
-        Signed in as <strong>{user?.email}</strong>{state?.org?.name ? ` · ${state.org.name}` : ""}{state?.integration ? ` · ${state.integration}` : ""}
-      </p>
+    <div style={{ fontFamily: "var(--font-body)", color: cbt.textBody }}>
+      {jsonLd.map((block, i) => (
+        // eslint-disable-next-line react/no-danger
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(block) }} />
+      ))}
 
-      {certExpiring && (
-        <div style={{ background: certDaysLeft !== null && certDaysLeft <= 0 ? "#fdeee9" : "#fff6e0", border: `1px solid ${certDaysLeft !== null && certDaysLeft <= 0 ? "#f0c0b3" : "#f0d48a"}`, color: certDaysLeft !== null && certDaysLeft <= 0 ? "#c0392b" : "#8a5a00", padding: "10px 14px", borderRadius: 8, fontSize: 13, margin: "16px 0" }}>
-          {certDaysLeft !== null && certDaysLeft <= 0
-            ? <>🔴 <strong>Your ZATCA certificate has expired</strong> — invoicing will fail until you renew. <Link href="/onboarding?step=4">Re-onboard →</Link></>
-            : <>⏳ <strong>Your ZATCA certificate expires in {certDaysLeft} day{certDaysLeft === 1 ? "" : "s"}</strong> — renew soon to avoid interruption. <Link href="/onboarding?step=4">Renew →</Link></>}
-        </div>
-      )}
-      {live ? (
-        <div style={{ background: "#e9f8ef", border: "1px solid #b6e4c6", color: "#1f7a45", padding: "10px 14px", borderRadius: 8, fontSize: 13, margin: "16px 0" }}>
-          🟢 <strong>Live</strong> — invoices are legally filed with ZATCA (core).
-        </div>
-      ) : (
-        <div style={{ background: "#fff6e0", border: "1px solid #f0d48a", color: "#8a5a00", padding: "10px 14px", borderRadius: 8, fontSize: 13, margin: "16px 0" }}>
-          ⚠️ <strong>Demo mode</strong> — invoices go to ZATCA simulation and are <strong>not legally filed</strong>. Switch to live in <Link href="/onboarding?step=4">onboarding</Link>.
-        </div>
-      )}
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
-        {kpis.map((k) => (
-          <div key={k.l} style={card}><div style={{ fontSize: 24, fontWeight: 700, color: k.c }}>{k.n}</div><div style={{ color: "#6b7785", fontSize: 12 }}>{k.l}</div></div>
-        ))}
-      </div>
-
-      {state && state.nextStep !== "done" && (
-        <div style={{ ...card, marginTop: 16 }}>
-          <h3 style={{ margin: "0 0 10px", fontSize: 15 }}>Finish setup</h3>
-          <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: 13.5 }}>
-            <Check ok={state.profileComplete}>Business profile</Check>
-            <Check ok={!!state.integration}>Accounting software chosen{state.integration ? ` — ${state.integration}` : ""}</Check>
-            <Check ok={state.connected}>Connected &amp; verified</Check>
-            <Check ok={state.zatcaOnboarded}>ZATCA onboarding (Demo)</Check>
-          </ul>
-          <Link href={stepHref[state.nextStep]} style={{ display: "inline-block", marginTop: 12, background: "#00994D", color: "#fff", padding: "9px 16px", borderRadius: 7, fontSize: 13, fontWeight: 500, textDecoration: "none" }}>
-            Next: {stepLabel[state.nextStep]} →
+      {/* NAV */}
+      <div style={{ borderBottom: `1px solid ${cbt.border}`, position: "sticky", top: 0, background: "#fff", zIndex: 10 }}>
+        <div style={{ ...container, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 24px" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/cbt-favicon-mark.png" alt="" width={30} height={30} style={{ borderRadius: 8 }} />
+            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 17, color: cbt.primaryDark }}>ZATCA Middleware</span>
           </Link>
-        </div>
-      )}
-
-      <div style={{ ...card, marginTop: 16, padding: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", padding: "14px 18px", borderBottom: rows.length ? "1px solid #eef2f6" : "none" }}>
-          <h3 style={{ margin: 0, fontSize: 15, flex: 1 }}>Recent invoices</h3>
-          <Link href="/invoices" style={{ color: "#00994D", fontSize: 13 }}>View all →</Link>
-        </div>
-        {rows.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "36px 20px", color: "#8a97a6", fontSize: 13 }}>
-            No invoices yet. {state?.zatcaOnboarded ? <Link href="/onboarding?step=4">Send a test invoice →</Link> : <Link href="/onboarding">Finish onboarding →</Link>}
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <Link href="/login" style={{ color: cbt.textBody, fontSize: 14, fontWeight: 500, textDecoration: "none" }}>Sign in</Link>
+            <Link href="/register" style={btnPrimary}>Get started free</Link>
           </div>
-        ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <tbody>
-              {rows.slice(0, 6).map((i) => (
-                <tr key={i.id}>
-                  <td style={{ padding: "10px 18px", borderBottom: "1px solid #f5f7fa", fontWeight: 500 }}>{i.invoice_number}</td>
-                  <td style={{ padding: "10px 14px", borderBottom: "1px solid #f5f7fa", textTransform: "capitalize", color: "#6b7785" }}>{i.invoice_type}</td>
-                  <td style={{ padding: "10px 14px", borderBottom: "1px solid #f5f7fa" }}>SAR {Number(i.total_amount ?? 0).toLocaleString()}</td>
-                  <td style={{ padding: "10px 14px", borderBottom: "1px solid #f5f7fa" }}><Pill s={i.zatca_status} /></td>
-                  <td style={{ padding: "10px 18px", borderBottom: "1px solid #f5f7fa", textAlign: "right" }}><Link href={`/invoices/${i.id}`} style={{ color: "#00994D" }}>View</Link></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        </div>
       </div>
+
+      {/* HERO */}
+      <section style={section("#fff")}>
+        <div style={{ ...container, textAlign: "center", maxWidth: 780 }}>
+          <span style={eyebrowStyle}>ZATCA Phase 2 · E-Invoicing</span>
+          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: "clamp(2rem,5vw,3rem)", letterSpacing: "-0.02em", color: cbt.textHeading, margin: "0 0 18px", lineHeight: 1.15 }}>
+            Stay ZATCA-compliant, <span style={{ fontStyle: "italic", color: cbt.primary }}>automatically</span>
+          </h1>
+          <p style={{ fontSize: 18, color: cbt.textMuted, lineHeight: 1.6, margin: "0 0 30px" }}>
+            Connect Odoo, Zoho Books, or your own software. Every invoice, credit note, and debit note is signed,
+            cleared, and reported to ZATCA in real time — no manual filing, no compliance headaches.
+          </p>
+          <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+            <Link href="/register" style={btnPrimary}>Get started free →</Link>
+            <Link href="/login" style={btnGhost}>Sign in</Link>
+          </div>
+          <p style={{ marginTop: 26, fontSize: 12, color: cbt.textFaint, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Works with Odoo · Zoho Books · Your own API
+          </p>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section style={section(cbt.surface)}>
+        <div style={container}>
+          <div style={{ textAlign: "center", marginBottom: 40 }}>
+            <span style={eyebrowStyle}>How it works</span>
+            <h2 style={h2Style}>Three steps. Zero manual filing.</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
+            {STEPS.map((s) => (
+              <div key={s.n} style={card}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: cbt.primaryMuted, color: cbt.primaryDark, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontFamily: "var(--font-heading)", marginBottom: 14 }}>{s.n}</div>
+                <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 17, color: cbt.textHeading, margin: "0 0 6px" }}>{s.t}</h3>
+                <p style={{ fontSize: 13.5, color: cbt.textMuted, margin: 0, lineHeight: 1.55 }}>{s.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section style={section("#fff")}>
+        <div style={container}>
+          <div style={{ textAlign: "center", marginBottom: 40 }}>
+            <span style={eyebrowStyle}>What you get</span>
+            <h2 style={h2Style}>Everything compliance requires, none of the busywork</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
+            {FEATURES.map((f) => (
+              <div key={f.t} style={card}>
+                <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 16, color: cbt.textHeading, margin: "0 0 6px" }}>{f.t}</h3>
+                <p style={{ fontSize: 13.5, color: cbt.textMuted, margin: 0, lineHeight: 1.55 }}>{f.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section style={section(cbt.surface)}>
+        <div style={{ ...container, maxWidth: 780 }}>
+          <div style={{ textAlign: "center", marginBottom: 36 }}>
+            <span style={eyebrowStyle}>Questions</span>
+            <h2 style={h2Style}>Frequently asked questions</h2>
+          </div>
+          <div>
+            {FAQ.map((f) => (
+              <div key={f.q} style={{ background: "#fff", border: `1px solid ${cbt.border}`, borderRadius: 10, padding: "18px 20px", marginBottom: 12 }}>
+                <h3 style={{ fontSize: 15, fontWeight: 600, color: cbt.textHeading, margin: "0 0 6px" }}>{f.q}</h3>
+                <p style={{ fontSize: 13.5, color: cbt.textMuted, margin: 0, lineHeight: 1.6 }}>{f.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA BAND */}
+      <section style={{ ...section("linear-gradient(135deg,#007A3D 0%,#00994D 55%,#00C060 100%)"), textAlign: "center" }}>
+        <div style={container}>
+          <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: "clamp(1.6rem,3vw,2.2rem)", color: "#fff", margin: "0 0 14px" }}>
+            Ready to stop filing invoices by hand?
+          </h2>
+          <p style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, margin: "0 0 26px" }}>
+            Set up in minutes. Test everything free in Demo mode before you go live.
+          </p>
+          <Link href="/register" style={{ ...btnPrimary, background: "#fff", color: cbt.primaryDark }}>Get started free →</Link>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer style={{ background: "#fff", padding: "32px 0", borderTop: `1px solid ${cbt.border}` }}>
+        <div style={{ ...container, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/cbt-logo-primary.png" alt={ORG_NAME} height={20} style={{ width: "auto" }} />
+          </div>
+          <div style={{ display: "flex", gap: 18, fontSize: 13 }}>
+            <Link href="/login" style={{ color: cbt.textMuted, textDecoration: "none" }}>Sign in</Link>
+            <Link href="/register" style={{ color: cbt.textMuted, textDecoration: "none" }}>Get started</Link>
+          </div>
+          <p style={{ fontSize: 12, color: cbt.textFaint, margin: 0 }}>© {new Date().getFullYear()} {ORG_NAME}</p>
+        </div>
+      </footer>
     </div>
   );
 }

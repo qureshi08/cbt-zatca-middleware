@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import SignOutButton from "./SignOutButton";
 
 const NAV = [
-  { href: "/", label: "Dashboard" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/profile", label: "Business Profile" },
   { href: "/onboarding", label: "Onboarding" },
   { href: "/invoices", label: "Invoices" },
@@ -33,7 +33,7 @@ export default function Sidebar({ email, isAdmin }: { email?: string; isAdmin?: 
 
       <nav style={{ marginTop: 12, flex: 1 }}>
         {nav.map((item) => {
-          const active = item.href === "/" ? path === "/" : path.startsWith(item.href);
+          const active = path.startsWith(item.href);
           return (
             <Link
               key={item.href}
