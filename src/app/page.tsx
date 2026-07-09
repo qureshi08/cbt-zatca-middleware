@@ -205,11 +205,16 @@ export default function LandingPage() {
             <h2 style={h2Style}>Frequently asked questions</h2>
           </div>
           <div>
-            {FAQ.map((f) => (
-              <div key={f.q} style={{ background: "#fff", border: `1px solid ${cbt.border}`, borderRadius: 10, padding: "18px 20px", marginBottom: 12 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 600, color: cbt.textHeading, margin: "0 0 6px" }}>{f.q}</h3>
-                <p style={{ fontSize: 13.5, color: cbt.textMuted, margin: 0, lineHeight: 1.6 }}>{f.a}</p>
-              </div>
+            {FAQ.map((f, i) => (
+              <details key={f.q} className="faq-item" open={i === 0}>
+                <summary>
+                  <span>{f.q}</span>
+                  <svg className="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </summary>
+                <p className="faq-answer">{f.a}</p>
+              </details>
             ))}
           </div>
         </div>

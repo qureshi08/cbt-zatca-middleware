@@ -331,6 +331,46 @@ h1, .h1, h2, .h2, h3, .h3 {
   padding: 22px;
 }
 
+/* FAQ accordion — native <details>/<summary>, no JS required. The answer stays
+   in the DOM at all times (just visually collapsed), so crawlers that don't
+   execute JavaScript still see the full text — important for AEO/SEO. */
+.faq-item {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0 20px;
+  margin-bottom: 12px;
+}
+.faq-item summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item .faq-chevron {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--color-primary);
+  transition: transform var(--transition-base, 0.2s ease);
+}
+.faq-item[open] .faq-chevron { transform: rotate(180deg); }
+.faq-item .faq-answer {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin: 0 0 18px;
+}
+
 /* ── Utilities ── */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
